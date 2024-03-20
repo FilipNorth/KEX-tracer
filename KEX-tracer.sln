@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34202.233
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KEX-tracer", "KEX-tracer.vcxproj", "{498D7E18-007E-4899-B319-82AA39FEF6C6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{498D7E18-007E-4899-B319-82AA39FEF6C6}.Debug|x64.ActiveCfg = Debug|x64
+		{498D7E18-007E-4899-B319-82AA39FEF6C6}.Debug|x64.Build.0 = Debug|x64
+		{498D7E18-007E-4899-B319-82AA39FEF6C6}.Debug|x86.ActiveCfg = Debug|Win32
+		{498D7E18-007E-4899-B319-82AA39FEF6C6}.Debug|x86.Build.0 = Debug|Win32
+		{498D7E18-007E-4899-B319-82AA39FEF6C6}.Release|x64.ActiveCfg = Release|x64
+		{498D7E18-007E-4899-B319-82AA39FEF6C6}.Release|x64.Build.0 = Release|x64
+		{498D7E18-007E-4899-B319-82AA39FEF6C6}.Release|x86.ActiveCfg = Release|Win32
+		{498D7E18-007E-4899-B319-82AA39FEF6C6}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {296D688F-207A-4ED5-8BBF-9F9B6447DCC9}
+	EndGlobalSection
+EndGlobal
