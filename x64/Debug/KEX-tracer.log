@@ -1,2 +1,5 @@
-﻿  Main.cpp
+﻿  Model.cpp
+C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Model.cpp(227,73): warning C4267: '+=': conversion from 'size_t' to 'unsigned int', possible loss of data
+C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Model.cpp(272,91): warning C4267: 'argument': conversion from 'size_t' to 'GLuint', possible loss of data
+C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Model.cpp(280,93): warning C4267: 'argument': conversion from 'size_t' to 'GLuint', possible loss of data
   KEX-tracer.vcxproj -> C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\x64\Debug\KEX-tracer.exe
