@@ -41,7 +41,7 @@ private:
 	// Interprets the binary data into floats, indices, and textures
 	std::vector<float> getFloats(json accessor);
 	std::vector<GLuint> getIndices(json accessor);
-	std::vector<Texture> getTextures();
+	std::vector<std::vector<Texture>> getTextures();
 
 	// Assembles all the floats into vertices
 	std::vector<Vertex> assembleVertices
@@ -55,4 +55,6 @@ private:
 	std::vector<glm::vec2> groupFloatsVec2(std::vector<float> floatVec);
 	std::vector<glm::vec3> groupFloatsVec3(std::vector<float> floatVec);
 	std::vector<glm::vec4> groupFloatsVec4(std::vector<float> floatVec);
+
+	void loadTextureByIndex(int index, const char* type, const std::string& fileDirectory, std::vector<Texture>& textures);
 };

@@ -1,7 +1,7 @@
 #include "Mesh.h"
 
 Mesh::Mesh(std::vector <Vertex>& vertices, std::vector <GLuint>& indices, std::vector <Texture>& textures)
-{
+{	
 	Mesh::vertices = vertices;
 	Mesh::indices = indices;
 	Mesh::textures = textures;
@@ -34,16 +34,23 @@ void Mesh::Draw
 )
 {
 	// Bind shader to be able to access uniforms
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+
 	shader.Activate();
 	VAO.Bind();
 
 	// Keep track of how many of each type of textures we have
 	unsigned int numDiffuse = 0;
 	unsigned int numSpecular = 0;
+	unsigned int numNormal = 0;
+	unsigned int numMetallicRoughness = 0;
 
 	for (unsigned int i = 0; i < textures.size(); i++)
 	{
-		std::string num;
+		std::string num; 
+		std::string num2 = std::to_string(textures[i].unit);
 		std::string type = textures[i].type;
 		if (type == "diffuse")
 		{
@@ -53,8 +60,20 @@ void Mesh::Draw
 		{
 			num = std::to_string(numSpecular++);
 		}
-		textures[i].texUnit(shader, (type + num).c_str(), i);
-		textures[i].Bind();
+		else if (type == "metallicRoughness")
+		{
+			num = std::to_string(numMetallicRoughness++);
+		}
+		else if (type == "normal")
+		{
+			num = std::to_string(numNormal++);
+		}
+
+		std::cout << type + num2 << "\n";
+		if (type == "diffuse") {
+			textures[i].texUnit(shader, (type + "0").c_str(), textures[i].unit);
+			textures[i].Bind();
+		}
 	}
 	// Take care of the camera Matrix
 	glUniform3f(glGetUniformLocation(shader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);

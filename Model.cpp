@@ -21,15 +21,9 @@ void Model::Draw(Shader& shader, Camera& camera)
 	for (unsigned int i = 0; i < meshes.size(); i++)
 	{
 		// Safety check to prevent out-of-bounds access
-		if (i < matricesMeshes.size()) {
-			meshes[i].Draw(shader, camera, matricesMeshes[i]);
-			j = i;
-		}
-		else {
-			// Optionally handle the case where there's no corresponding matrix
-			glm::mat4 defaultMatrix = glm::mat4(1.0f); // Identity matrix
-			meshes[i].Draw(shader, camera, matricesMeshes[j]);
-		}
+		//std::cout << meshes[i].textures[0].ID << "\n";
+		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[0]);
+		
 	}
 }
 
@@ -37,6 +31,7 @@ void Model::loadMesh(unsigned int indMesh) {
 	const json& mesh = JSON["meshes"][indMesh];
 	const json& primitives = mesh["primitives"];
 
+	std::vector<std::vector<Texture>> textures = getTextures();
 	// Iterate over all primitives in the mesh
 	for (const auto& primitive : primitives) {
 		// Safely obtain accessor indices with fallbacks
@@ -44,6 +39,7 @@ void Model::loadMesh(unsigned int indMesh) {
 		unsigned int normalAccInd = primitive["attributes"].value("NORMAL", 0);
 		unsigned int texAccInd = primitive["attributes"].value("TEXCOORD_0", 0);
 		unsigned int indAccInd = primitive.value("indices", 0);
+		unsigned int materialInd = primitive.value("material", 0);
 
 		// Use accessor indices to get all vertex components
 		std::vector<float> posVec = getFloats(JSON["accessors"][posAccInd]);
@@ -58,10 +54,9 @@ void Model::loadMesh(unsigned int indMesh) {
 
 		// Get indices and textures
 		std::vector<GLuint> indices = indAccInd > 0 ? getIndices(JSON["accessors"][indAccInd]) : std::vector<GLuint>();
-		std::vector<Texture> textures = getTextures();
 
 		// Combine the vertices, indices, and textures into a mesh and add to the model
-		meshes.push_back(Mesh(vertices, indices, textures));
+		meshes.push_back(Mesh(vertices, indices, textures[materialInd]));
 	}
 }
 
@@ -128,15 +123,12 @@ void Model::traverseNode(unsigned int nextNode, glm::mat4 matrix)
 	glm::mat4 matNextNode = matrix * matNode * trans * rot * sca;
 
 	// Check if the node contains a mesh and if it does load it
-	if (node.find("mesh") != node.end())
-	{
 		translationsMeshes.push_back(translation);
 		rotationsMeshes.push_back(rotation);
 		scalesMeshes.push_back(scale);
 		matricesMeshes.push_back(matNextNode);
 
 		loadMesh(node["mesh"]);
-	}
 
 	// Check if the node has children, and if it does, apply this function to them with the matNextNode
 	if (node.find("children") != node.end())
@@ -237,7 +229,8 @@ std::vector<GLuint> Model::getIndices(const json accessor) {
 	return indices;
 }
 
-
+/*
+* Old implementation of getTextures() that only loads diffuse and metallicRoughness textures
 std::vector<Texture> Model::getTextures()
 {
 	std::vector<Texture> textures;
@@ -287,6 +280,59 @@ std::vector<Texture> Model::getTextures()
 
 	return textures;
 }
+*/
+
+std::vector<std::vector<Texture>> Model::getTextures() {
+	std::vector<std::vector<Texture>> textures;
+	//std::map<int, Texture> loadedTex;
+
+	textures.resize(JSON["materials"].size());
+	std::string fileStr = std::string(file);
+	std::string fileDirectory = fileStr.substr(0, fileStr.find_last_of('/') + 1);
+	int i = 0;
+	// Iterate over all materials
+	for (const auto& material : JSON["materials"]) {
+		// Check and load baseColorTexture
+		if (material.contains("pbrMetallicRoughness") && material["pbrMetallicRoughness"].contains("baseColorTexture")) {
+			int texIndex = material["pbrMetallicRoughness"]["baseColorTexture"]["index"];
+			loadTextureByIndex(texIndex, "diffuse", fileDirectory, textures[i]);
+		}
+
+		// Check and load metallicRoughnessTexture
+		if (material.contains("pbrMetallicRoughness") && material["pbrMetallicRoughness"].contains("metallicRoughnessTexture")) {
+			int texIndex = material["pbrMetallicRoughness"]["metallicRoughnessTexture"]["index"];
+			loadTextureByIndex(texIndex, "metallicRoughness", fileDirectory, textures[i]);
+		}
+
+		// Check and load normalTexture
+		if (material.contains("normalTexture")) {
+			int texIndex = material["normalTexture"]["index"];
+			loadTextureByIndex(texIndex, "normal", fileDirectory, textures[i]);
+		}
+		i++;
+		// Additional texture types (like emissive, occlusion, etc.) can be checked and loaded in a similar way
+	}
+
+	return textures;
+}
+
+void Model::loadTextureByIndex(int index, const char* type, const std::string& fileDirectory, std::vector<Texture>& textures) {
+	std::string texPath = JSON["images"][index]["uri"];
+	// Check if the texture has already been loaded
+	auto it = std::find(loadedTexName.begin(), loadedTexName.end(), texPath);
+	if (it == loadedTexName.end()) { // Texture not already loaded
+		Texture texture((fileDirectory + texPath).c_str(), type, loadedTex.size());
+		textures.push_back(texture);
+		loadedTex.push_back(texture);
+		loadedTexName.push_back(texPath);
+	}
+	else { // Texture already loaded
+		textures.push_back(loadedTex[std::distance(loadedTexName.begin(), it)]);
+	}
+}
+
+
+
 
 std::vector<Vertex> Model::assembleVertices
 (

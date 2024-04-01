@@ -1,7 +1,7 @@
-#include"Texture.h"
+#include "Texture.h"
 
 Texture::Texture(const char* image, const char* texType, GLuint slot)
-{
+{	
 	// Assigns the type of the texture ot the texture object
 	type = texType;
 
@@ -86,7 +86,7 @@ Texture::Texture(const char* image, const char* texType, GLuint slot)
 
 void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
 {
-	// Gets the location of the uniform
+	// Gets the location of the uniform  GLuint texUni = glGetUniformLocation(shader.ID, uniform);
 	GLuint texUni = glGetUniformLocation(shader.ID, uniform);
 	// Shader needs to be activated before changing the value of a uniform
 	shader.Activate();
