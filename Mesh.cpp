@@ -50,30 +50,11 @@ void Mesh::Draw
 	for (unsigned int i = 0; i < textures.size(); i++)
 	{
 		std::string num; 
-		std::string num2 = std::to_string(textures[i].unit);
 		std::string type = textures[i].type;
-		if (type == "diffuse")
-		{
-			num = std::to_string(numDiffuse++);
-		}
-		else if (type == "specular")
-		{
-			num = std::to_string(numSpecular++);
-		}
-		else if (type == "metallicRoughness")
-		{
-			num = std::to_string(numMetallicRoughness++);
-		}
-		else if (type == "normal")
-		{
-			num = std::to_string(numNormal++);
-		}
 
-		std::cout << type + num2 << "\n";
-		if (type == "diffuse") {
-			textures[i].texUnit(shader, (type + "0").c_str(), textures[i].unit);
-			textures[i].Bind();
-		}
+
+		textures[i].texUnit(shader, (type + "0").c_str(), textures[i].unit);
+		textures[i].Bind();
 	}
 	// Take care of the camera Matrix
 	glUniform3f(glGetUniformLocation(shader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
