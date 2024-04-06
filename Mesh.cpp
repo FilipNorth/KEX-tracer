@@ -48,10 +48,9 @@ void Mesh::Draw
 	unsigned int numMetallicRoughness = 0;
 
 	for (unsigned int i = 0; i < textures.size(); i++)
-	{
+	{	
 		std::string num; 
 		std::string type = textures[i].type;
-
 
 		textures[i].texUnit(shader, (type + "0").c_str(), textures[i].unit);
 		textures[i].Bind();

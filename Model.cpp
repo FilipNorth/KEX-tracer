@@ -229,107 +229,61 @@ std::vector<GLuint> Model::getIndices(const json accessor) {
 	return indices;
 }
 
-/*
-* Old implementation of getTextures() that only loads diffuse and metallicRoughness textures
-std::vector<Texture> Model::getTextures()
-{
-	std::vector<Texture> textures;
-
-	std::string fileStr = std::string(file);
-	std::string fileDirectory = fileStr.substr(0, fileStr.find_last_of('/') + 1);
-
-	// Go over all images
-	for (unsigned int i = 0; i < JSON["images"].size(); i++)
-	{
-		// uri of current texture
-		std::string texPath = JSON["images"][i]["uri"];
-
-		// Check if the texture has already been loaded
-		bool skip = false;
-		for (unsigned int j = 0; j < loadedTexName.size(); j++)
-		{
-			if (loadedTexName[j] == texPath)
-			{
-				textures.push_back(loadedTex[j]);
-				skip = true;
-				break;
-			}
-		}
-
-		// If the texture has been loaded, skip this
-		if (!skip)
-		{
-			// Load diffuse texture
-			if (texPath.find("332936164838540657") != std::string::npos)
-			{
-				Texture diffuse = Texture((fileDirectory + texPath).c_str(), "diffuse", loadedTex.size());
-				textures.push_back(diffuse);
-				loadedTex.push_back(diffuse);
-				loadedTexName.push_back(texPath);
-			}
-			// Load specular texture
-			else if (texPath.find("metallicRoughness") != std::string::npos)
-			{
-				Texture specular = Texture((fileDirectory + texPath).c_str(), "specular", loadedTex.size());
-				textures.push_back(specular);
-				loadedTex.push_back(specular);
-				loadedTexName.push_back(texPath);
-			}
-		}
-	}
-
-	return textures;
-}
-*/
 
 std::vector<std::vector<Texture>> Model::getTextures() {
 	std::vector<std::vector<Texture>> textures;
-	//std::map<int, Texture> loadedTex;
 
 	textures.resize(JSON["materials"].size());
-	std::string fileStr = std::string(file);
-	std::string fileDirectory = fileStr.substr(0, fileStr.find_last_of('/') + 1);
-	int i = 0;
-	// Iterate over all materials
-	for (const auto& material : JSON["materials"]) {
-		// Check and load baseColorTexture
-		if (material.contains("pbrMetallicRoughness") && material["pbrMetallicRoughness"].contains("baseColorTexture")) {
-			int texIndex = material["pbrMetallicRoughness"]["baseColorTexture"]["index"];
-			loadTextureByIndex(texIndex, "diffuse", fileDirectory, textures[i]);
-		}
+	std::string fileDirectory = std::string(file).substr(0, std::string(file).find_last_of('/') + 1);
 
-		// Check and load metallicRoughnessTexture
-		if (material.contains("pbrMetallicRoughness") && material["pbrMetallicRoughness"].contains("metallicRoughnessTexture")) {
-			int texIndex = material["pbrMetallicRoughness"]["metallicRoughnessTexture"]["index"];
-			loadTextureByIndex(texIndex, "metallicRoughness", fileDirectory, textures[i]);
-		}
+	for (size_t i = 0; i < JSON["materials"].size(); ++i) {
+		const auto& material = JSON["materials"][i];
 
-		// Check and load normalTexture
+		if (material.contains("pbrMetallicRoughness")) {
+			if (material["pbrMetallicRoughness"].contains("baseColorTexture")) {
+				int texIndex = material["pbrMetallicRoughness"]["baseColorTexture"]["index"];
+				loadTextureByIndex(texIndex, "diffuse", fileDirectory, textures[i]);
+			}
+			if (material["pbrMetallicRoughness"].contains("metallicRoughnessTexture")) {
+				int texIndex = material["pbrMetallicRoughness"]["metallicRoughnessTexture"]["index"];
+				loadTextureByIndex(texIndex, "metallicRoughness", fileDirectory, textures[i]);
+			}
+		}
 		if (material.contains("normalTexture")) {
 			int texIndex = material["normalTexture"]["index"];
 			loadTextureByIndex(texIndex, "normal", fileDirectory, textures[i]);
 		}
-		i++;
-		// Additional texture types (like emissive, occlusion, etc.) can be checked and loaded in a similar way
 	}
 
 	return textures;
 }
 
 void Model::loadTextureByIndex(int index, const char* type, const std::string& fileDirectory, std::vector<Texture>& textures) {
-	std::string texPath = JSON["images"][index]["uri"];
-	// Check if the texture has already been loaded
+	int imageIndex  = findImageIndexByTextureIndex(index);
+	std::string texPath = JSON["images"][imageIndex]["uri"];
+
 	auto it = std::find(loadedTexName.begin(), loadedTexName.end(), texPath);
-	if (it == loadedTexName.end()) { // Texture not already loaded
+	if (texPath == "7268504077753552595.jpg") {
+		std::cout << "diffuse\n";
+	}
+	if (it == loadedTexName.end()) {
 		Texture texture((fileDirectory + texPath).c_str(), type, loadedTex.size());
 		textures.push_back(texture);
 		loadedTex.push_back(texture);
 		loadedTexName.push_back(texPath);
 	}
-	else { // Texture already loaded
+	else {
 		textures.push_back(loadedTex[std::distance(loadedTexName.begin(), it)]);
 	}
 }
+
+int Model::findImageIndexByTextureIndex(int index){
+	const json& texture = JSON["textures"][index];
+	int imageIndex = texture["source"];
+	//imageTexCoordIndex = texture["texCoord"];
+	return imageIndex;
+}
+
 
 
 

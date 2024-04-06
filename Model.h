@@ -57,4 +57,5 @@ private:
 	std::vector<glm::vec4> groupFloatsVec4(std::vector<float> floatVec);
 
 	void loadTextureByIndex(int index, const char* type, const std::string& fileDirectory, std::vector<Texture>& textures);
+	int findImageIndexByTextureIndex(int index);
 };
