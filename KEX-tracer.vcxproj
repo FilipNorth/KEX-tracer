@@ -71,16 +71,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\troje\Documents\kth\KEX\KEXgit\KEX-tracer\Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\troje\Documents\kth\KEX\KEXgit\KEX-tracer\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Libraries\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\troje\Documents\kth\KEX\KEXgit\KEX-tracer\Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\troje\Documents\kth\KEX\KEXgit\KEX-tracer\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>C:\Users\filip\Documents\Programmering\Projekt\KEX-tracer\Libraries\include;$(IncludePath)</IncludePath>
