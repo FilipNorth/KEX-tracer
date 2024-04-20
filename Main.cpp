@@ -76,6 +76,7 @@ int main()
 
 	// Generates Shader object using shaders default.vert and default.frag
 	Shader shaderProgram("Shaders/voxel.vert", "Shaders/voxel.geom", "Shaders/voxel.frag");
+	Shader normalShader("Shaders/voxel.vert", "Shaders/normal.geom", "Shaders/normal.frag");
 
 	// Shader for light cube
 	Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
@@ -149,6 +150,7 @@ int main()
 
 		// Draw a model
 		model.Draw(shaderProgram, camera);
+		model.Draw(normalShader, camera);
 
 		// Tells OpenGL which Shader Program we want to use
 		lightShader.Activate();
