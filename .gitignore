@@ -2,4 +2,25 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/KEX-tracer
+/.vs/
+/Models
+/x64/Debug/
+KEX-tracer.vcxproj
+/x64/Debug/vc143.pdb
+/x64/Debug/vc143.idb
+/x64/Debug/VBO.obj
+/x64/Debug/VAO.obj
+/x64/Debug/Model.obj
+/x64/Debug/Main.obj
+/x64/Debug/Mesh.obj
+/x64/Debug/KEX-tracer.pdb
+/x64/Debug/KEX-tracer.log
+/x64/Debug/KEX-tracer.ilk
+/x64/Debug/KEX-tracer.exe
+/x64/Debug/glad.obj
+/x64/Debug/EBO.obj
+/x64/Debug/KEX-tracer.tlog/CL.command.1.tlog
+/x64/Debug/KEX-tracer.tlog/CL.read.1.tlog
+/x64/Debug/KEX-tracer.tlog/CL.write.1.tlog
+/x64/Debug/KEX-tracer.tlog/link.read.1.tlog
+/x64/Debug/KEX-tracer.tlog/link.write.1.tlog
