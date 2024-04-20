@@ -75,7 +75,7 @@ int main()
 
 
 	// Generates Shader object using shaders default.vert and default.frag
-	Shader shaderProgram("Shaders/default.vert", "Shaders/default.frag");
+	Shader shaderProgram("Shaders/voxel.vert", "Shaders/voxel.geom", "Shaders/voxel.frag");
 
 	// Shader for light cube
 	Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
