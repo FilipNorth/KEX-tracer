@@ -47,7 +47,7 @@ void Mesh::Draw
 	unsigned int numNormal = 0;
 	unsigned int numMetallicRoughness = 0;
 
-	for (unsigned int i = 0; i < textures.size(); i++)
+	for (unsigned int i = 0; i < textures.size(); i++)  //can be mult texture_images inside the textureIndex of textures depending on the mesh.
 	{	
 		std::string num; 
 		std::string type = textures[i].type;

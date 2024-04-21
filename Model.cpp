@@ -22,7 +22,7 @@ void Model::Draw(Shader& shader, Camera& camera)
 	{
 		// Safety check to prevent out-of-bounds access
 		//std::cout << meshes[i].textures[0].ID << "\n";
-		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[0]);
+		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[0]); //??? y not [i]? bcus only stored in [0] i think
 		
 	}
 }
@@ -30,16 +30,16 @@ void Model::Draw(Shader& shader, Camera& camera)
 void Model::loadMesh(unsigned int indMesh) {
 	const json& mesh = JSON["meshes"][indMesh];
 	const json& primitives = mesh["primitives"];
-
-	std::vector<std::vector<Texture>> textures = getTextures();
-	// Iterate over all primitives in the mesh
-	for (const auto& primitive : primitives) {
+	
+	std::vector<std::vector<Texture>> textures = getTextures(); //Do it once before all the primitives, smart! //notice how textures is a vector of vectors. Meaning one mesh is linked with a textureIndex where there can be mult diff textures that all belong to the same mesh.
+	// Iterate over all primitives in the mesh, //compared to tutorial we now have more primitives.
+	for (const auto& primitive : primitives) { 
 		// Safely obtain accessor indices with fallbacks
 		unsigned int posAccInd = primitive["attributes"].value("POSITION", 0);
 		unsigned int normalAccInd = primitive["attributes"].value("NORMAL", 0);
 		unsigned int texAccInd = primitive["attributes"].value("TEXCOORD_0", 0);
 		unsigned int indAccInd = primitive.value("indices", 0);
-		unsigned int materialInd = primitive.value("material", 0);
+		unsigned int materialInd = primitive.value("material", 0); //index for the right texture
 
 		// Use accessor indices to get all vertex components
 		std::vector<float> posVec = getFloats(JSON["accessors"][posAccInd]);
@@ -230,10 +230,11 @@ std::vector<GLuint> Model::getIndices(const json accessor) {
 }
 
 
+//compared to the tutorial, we have diff types of imgages of same obj depending on the material.
 std::vector<std::vector<Texture>> Model::getTextures() {
 	std::vector<std::vector<Texture>> textures;
 
-	textures.resize(JSON["materials"].size());
+	textures.resize(JSON["materials"].size()); //so index fits size with the materials list so materialInd used in loadMesh can be converted to "textureInd"(imgageInd) basically
 	std::string fileDirectory = std::string(file).substr(0, std::string(file).find_last_of('/') + 1);
 
 	for (size_t i = 0; i < JSON["materials"].size(); ++i) {
@@ -262,18 +263,18 @@ void Model::loadTextureByIndex(int index, const char* type, const std::string& f
 	int imageIndex  = findImageIndexByTextureIndex(index);
 	std::string texPath = JSON["images"][imageIndex]["uri"];
 
-	auto it = std::find(loadedTexName.begin(), loadedTexName.end(), texPath);
+	auto it = std::find(loadedTexName.begin(), loadedTexName.end(), texPath); //???
 	if (texPath == "7268504077753552595.jpg") {
 		std::cout << "diffuse\n";
 	}
-	if (it == loadedTexName.end()) {
+	if (it == loadedTexName.end()) {//it hasnt been found in loadedTexName/ hasnt been loaded yet
 		Texture texture((fileDirectory + texPath).c_str(), type, loadedTex.size());
 		textures.push_back(texture);
 		loadedTex.push_back(texture);
 		loadedTexName.push_back(texPath);
 	}
-	else {
-		textures.push_back(loadedTex[std::distance(loadedTexName.begin(), it)]);
+	else {//its alredy in loadedTex
+		textures.push_back(loadedTex[std::distance(loadedTexName.begin(), it)]); //distance just give the right index basically
 	}
 }
 

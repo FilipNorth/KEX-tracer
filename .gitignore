@@ -3,3 +3,11 @@
 ################################################################################
 
 /.vs/KEX-tracer
+/Models
+/KEX-tracer
+/.vs
+/x64\Debug
+/x64/Debug/KEX-tracer.exe
+/x64/Debug/KEX-tracer.pdb
+/KEX-tracer.vcxproj
+/KEX-tracer.vcxproj.filters
