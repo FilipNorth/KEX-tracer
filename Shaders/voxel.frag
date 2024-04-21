@@ -12,8 +12,20 @@ in vec3 color;
 // Imports the texture coordinates from the Vertex Shader
 in vec2 texCoord;
 
+struct PointLight_t {
+  vec3 position; //offset 0
+  vec3 color; //offset 16
+  float intensity; //offset 32
+};
 
+struct DirectionalLight_t {
+  vec3 direction; //offset 0
+  vec3 color; //offset 16
+  float intensity; //offset 32
+};
 
+layout (rgba8) uniform coherent volatile image3D voxel_field;
+//layout (rgba8) uniform coherent volatile image3D voxel_field;
 // Gets the Texture Units from the main function
 uniform sampler2D diffuse0;
 uniform sampler2D specular0;
@@ -26,6 +38,11 @@ uniform vec4 lightColor;
 uniform vec3 lightPos;
 // Gets the position of the camera from the main function
 uniform vec3 camPos;
+
+vec4 albedo = texture(diffuse0, texCoord);
+vec4 specular = texture(specular0, texCoord);
+vec4 normal = texture(normalMap0, texCoord);
+vec4 metallicRoughness = texture(metallicRoughnessMap0, texCoord);
 
 
 vec4 pointLight()
@@ -57,57 +74,63 @@ vec4 pointLight()
 	return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
 }
 
-vec4 direcLight()
-{
-	// ambient lighting
-	float ambient = 0.20f;
 
-	// diffuse lighting
-	vec3 normal = normalize(Normal);
-	vec3 lightDirection = normalize(lightPos);
-	float diffuse = max(dot(normal, lightDirection), 0.0f);
 
-	// specular lighting
-	float specularLight = 0.50f;
-	vec3 viewDirection = normalize(camPos - crntPos);
-	vec3 reflectionDirection = reflect(-lightDirection, normal);
-	float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
-	float specular = specAmount * specularLight;
 
-	return (texture(diffuse0, texCoord) * (diffuse + ambient) + texture(specular0, texCoord).r * specular) * lightColor;
+vec3 calculate_light(vec3 light_dir, vec3 light_color, float light_intensity,
+		     bool attenuation) {
+  float light_distance = length(light_dir);
+
+  float NdotL = dot(Normal, normalize(light_dir));
+  float intensity = max(NdotL, 0.);
+  vec3 color = albedo.xyz * intensity * light_color * light_intensity;
+
+  if (attenuation)
+    color /= light_distance + 1;
+
+  return color;
 }
 
-vec4 spotLight()
-{
-	// controls how big the area that is lit up is
-	float outerCone = 0.90f;
-	float innerCone = 0.95f;
+vec3 shade() {
+  vec3 color = vec3(0);
 
-	// ambient lighting
-	float ambient = 0.20f;
+  const int DirectionalLightCount = 1;
+  const int PointLightCount = 1;
 
-	// diffuse lighting
-	vec3 normal = normalize(Normal);
-	vec3 lightDirection = normalize(lightPos - crntPos);
-	float diffuse = max(dot(normal, lightDirection), 0.0f);
+  DirectionalLight_t DirectionalLights[DirectionalLightCount];
+  DirectionalLights[0] = DirectionalLight_t(vec3(.2, -1, 0),
+					    vec3(1.),
+					    1.);
 
-	// specular lighting
-	float specularLight = 0.50f;
-	vec3 viewDirection = normalize(camPos - crntPos);
-	vec3 reflectionDirection = reflect(-lightDirection, normal);
-	float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
-	float specular = specAmount * specularLight;
 
-	// calculates the intensity of the crntPos based on its angle to the center of the light cone
-	float angle = dot(normalize(-lightPos), -lightDirection);//the first vec3 can actually change the "direction" of the spot-light. its the normal vector we compare with to get the angle (now it points to center)
-	float inten = clamp((angle - outerCone) / (innerCone - outerCone), 0.0f, 1.0f);
+  PointLight_t PointLights[PointLightCount];
+  PointLights[0] = PointLight_t(vec3(0, 2, 0), vec3(1), 10.);
 
-	return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
+  for (int i = 0; i < PointLightCount; i++) {
+    PointLight_t ls = PointLights[i];
+    vec3 light_dir = ls.position - crntPos;
+    color += calculate_light(light_dir, ls.color, ls.intensity, true);
+  }
+
+  return color;
+  for (int i = 0; i < DirectionalLightCount; i++) {
+    DirectionalLight_t ls = DirectionalLights[i];
+    vec3 light_dir = -ls.direction;
+    color += calculate_light(light_dir, ls.color, ls.intensity, false);
+  }
+
+  return color;
 }
 
+void main(){
+  ivec3 image_size = imageSize(voxel_field);
 
-void main()
-{
-	// outputs final color
-	FragColor = pointLight();
+  vec4 res  = vec4(shade(), 1.0);
+
+  //float shadow = shadow_calculation(lightPos);
+  //res.rgb *= 0.5 * (1.0 - shadow) + 0.5;
+  res.rgb = pow(res.rgb, vec3(1.0 / 2.2));
+
+  imageStore(voxel_field,
+	     ivec3(image_size * (0.5 * crntPos + 0.5)), res);
 }

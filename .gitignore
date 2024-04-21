@@ -29,4 +29,5 @@ KEX-tracer.vcxproj
 /x64/Debug/Camera.obj
 /x64/Debug/shaderClass.obj
 /x64/Debug/Texture.obj
-/KEX-tracer.vcxproj.filters
+/x64/Debug/Scene.obj
+/x64/Debug/stb.obj

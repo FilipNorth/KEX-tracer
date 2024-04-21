@@ -27,6 +27,18 @@ void Model::Draw(Shader& shader, Camera& camera)
 	}
 }
 
+void Model::DrawVoxels(Shader& shader, Camera& camera)
+{
+	unsigned int j = 0;
+	// Go over all meshes and draw each one
+	for (unsigned int i = 0; i < voxels.size(); i++)
+	{
+		// Safety check to prevent out-of-bounds access
+		//std::cout << meshes[i].textures[0].ID << "\n";
+		voxels[i].Voxelization::Draw(shader, camera, voxel_texture_, matricesMeshes[0]);
+	}
+}
+
 void Model::loadMesh(unsigned int indMesh) {
 	const json& mesh = JSON["meshes"][indMesh];
 	const json& primitives = mesh["primitives"];
@@ -57,7 +69,14 @@ void Model::loadMesh(unsigned int indMesh) {
 
 		// Combine the vertices, indices, and textures into a mesh and add to the model
 		meshes.push_back(Mesh(vertices, indices, textures[materialInd]));
+
+		voxels.push_back(Voxelization(vertices, indices, textures[materialInd]));
 	}
+	// Voxel texture
+	int voxel_field_size_ = 512;
+	voxel_texture_ = Texture3D(voxel_field_size_, voxel_field_size_, voxel_field_size_, GL_RGBA8, 5);
+	voxel_texture_.set_wrap(GL_CLAMP_TO_BORDER);
+	voxel_texture_.set_min_mag(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
 }
 
 
@@ -263,9 +282,6 @@ void Model::loadTextureByIndex(int index, const char* type, const std::string& f
 	std::string texPath = JSON["images"][imageIndex]["uri"];
 
 	auto it = std::find(loadedTexName.begin(), loadedTexName.end(), texPath);
-	if (texPath == "7268504077753552595.jpg") {
-		std::cout << "diffuse\n";
-	}
 	if (it == loadedTexName.end()) {
 		Texture texture((fileDirectory + texPath).c_str(), type, loadedTex.size());
 		textures.push_back(texture);

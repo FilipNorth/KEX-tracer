@@ -21,11 +21,11 @@ uniform mat4 rotation;
 uniform mat4 scale;
 
 void main() {
-	gl_Position = model * translation * rotation * scale * vec4(aPos, 1.0f);
 	data_out.Normal = aNormal;
 	data_out.color = aColor;
 	data_out.texCoord = mat2(0.0, -1.0, 1.0, 0.0) * aTexCoords;
 	data_out.projection = camMatrix;
     data_out.crntPos = vec3(model * translation * rotation * scale * vec4(aPos, 1.0f));
+    gl_Position = camMatrix*vec4(data_out.crntPos, 1.0f);
 
 }

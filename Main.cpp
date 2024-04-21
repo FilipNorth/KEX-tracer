@@ -75,8 +75,9 @@ int main()
 
 
 	// Generates Shader object using shaders default.vert and default.frag
-	Shader shaderProgram("Shaders/voxel.vert", "Shaders/voxel.geom", "Shaders/voxel.frag");
-	Shader normalShader("Shaders/voxel.vert", "Shaders/normal.geom", "Shaders/normal.frag");
+	Shader defaultShader("Shaders/default.vert", "Shaders/default.geom", "Shaders/default.frag");
+	Shader voxelShader("Shaders/voxel.vert", "Shaders/voxel.geom", "Shaders/voxel.frag");
+	Shader normalShader("Shaders/default.vert", "Shaders/normal.geom", "Shaders/normal.frag");
 
 	// Shader for light cube
 	Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
@@ -100,9 +101,13 @@ int main()
 	glm::mat4 lightModel = glm::mat4(1.0f);
 	lightModel = glm::translate(lightModel, lightPos);
 
-	shaderProgram.Activate();
-	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
-	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+	defaultShader.Activate();
+	glUniform4f(glGetUniformLocation(defaultShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+	glUniform3f(glGetUniformLocation(defaultShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+
+	voxelShader.Activate();
+	glUniform4f(glGetUniformLocation(voxelShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+	glUniform3f(glGetUniformLocation(voxelShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 
 	lightShader.Activate();
 	glUniformMatrix4fv(glGetUniformLocation(lightShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(lightModel));
@@ -134,6 +139,7 @@ int main()
 
 	// Original code from the tutorial
 	// Model model("models/bunny/scene.gltf");
+	model.DrawVoxels(voxelShader, camera);
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
@@ -149,7 +155,8 @@ int main()
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 
 		// Draw a model
-		model.Draw(shaderProgram, camera);
+		//model.DrawVoxels(voxelShader, camera);
+		model.Draw(defaultShader, camera);
 		model.Draw(normalShader, camera);
 
 		// Tells OpenGL which Shader Program we want to use
@@ -171,7 +178,9 @@ int main()
 
 
 	// Delete all the objects we've created
-	shaderProgram.Delete();
+	defaultShader.Delete();
+	voxelShader.Delete();
+	lightShader.Delete();
 	// Delete window before ending the program
 	glfwDestroyWindow(window);
 	// Terminate GLFW before ending the program

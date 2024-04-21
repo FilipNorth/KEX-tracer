@@ -13,6 +13,8 @@ public:
 
 	void Draw(Shader& shader, Camera& camera);
 
+	void DrawVoxels(Shader& shader, Camera& camera);
+
 private:
 	// Variables for easy access
 	const char* file;
@@ -21,10 +23,15 @@ private:
 
 	// All the meshes and transformations
 	std::vector<Mesh> meshes;
+	std::vector<Voxelization> voxels;
 	std::vector<glm::vec3> translationsMeshes;
 	std::vector<glm::quat> rotationsMeshes;
 	std::vector<glm::vec3> scalesMeshes;
 	std::vector<glm::mat4> matricesMeshes;
+	Texture3D voxel_texture_;
+
+	
+
 
 	// Prevents textures from being loaded twice
 	std::vector<std::string> loadedTexName;
