@@ -2,11 +2,12 @@
 
 Voxelization::Voxelization(std::vector <Vertex>& vertices, 
 	std::vector <GLuint>& indices, 
-	std::vector <Texture>& textures)
+	std::vector <Texture>& textures, Texture3D &voxelTexture)
 {
 	Voxelization::vertices = vertices;
 	Voxelization::indices = indices;
 	Voxelization::textures = textures;
+	Voxelization::voxelTexture = voxelTexture;
 
 	VAO.Bind();
 	// Generates Vertex Buffer Object and links it to vertices
@@ -28,7 +29,6 @@ void Voxelization::Draw
 (
 	Shader& shader,
 	Camera& camera,
-	Texture3D& voxel_field,
 	glm::mat4 matrix,
 	glm::vec3 translation,
 	glm::quat rotation,
@@ -53,7 +53,8 @@ void Voxelization::Draw
 		textures[i].Bind();
 	}
 
-
+	// Activate and bind the 3D texture
+	voxelTexture.Activate(shader.ID, "texture3D", textures.size());
 
 	// Take care of the camera Matrix
 	glUniform3f(glGetUniformLocation(shader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
@@ -63,28 +64,23 @@ void Voxelization::Draw
 	glm::mat4 trans = glm::mat4(1.0f);
 	glm::mat4 rot = glm::mat4(1.0f);
 	glm::mat4 sca = glm::mat4(1.0f);
+	glm::mat4 x = glm::mat4(1.0f);
 
 	// Transform the matrices to their correct form
 	trans = glm::translate(trans, translation);
 	rot = glm::mat4_cast(rotation);
 	sca = glm::scale(sca, scale);
 
-	voxel_field.bind(0);	// Bind the voxel field to texture unit 0
-
 	// Push the matrices to the vertex shader
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "translation"), 1, GL_FALSE, glm::value_ptr(trans));
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "rotation"), 1, GL_FALSE, glm::value_ptr(rot));
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "scale"), 1, GL_FALSE, glm::value_ptr(sca));
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(matrix));
-	glUniform1i(glGetUniformLocation(shader.ID, "voxel_field"), 0);
-	
-
-	voxel_field.bind_image_texture(0); // Bind the voxel field to image unit 0
-	//voxel_field.gen_mipmaps(); // Generate mipmaps for the voxel field
-
-
 
 	// Draw the actual mesh
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+
+	VAO.Unbind();
 }
 

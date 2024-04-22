@@ -2,6 +2,7 @@
 #include"VAO.h"
 #include"VBO.h"
 #include"EBO.h"
+#include "Voxelizer.h"
 
 
 const unsigned int width = 1920;
@@ -36,12 +37,9 @@ GLuint lightIndices[] =
 	4, 6, 7
 };
 
-
-
-
-
 int main()
 {
+	//main1();
 	// Initialize GLFW
 	glfwInit();
 
@@ -79,6 +77,8 @@ int main()
 	Shader voxelShader("Shaders/voxel.vert", "Shaders/voxel.geom", "Shaders/voxel.frag");
 	Shader normalShader("Shaders/default.vert", "Shaders/normal.geom", "Shaders/normal.frag");
 
+	Shader testingShaders("Shaders/voxelTesting.vert", "Shaders/voxelTesting.geom", "Shaders/voxelTesting.frag");
+
 	// Shader for light cube
 	Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
 	// Generates Vertex Array Object and binds it
@@ -97,6 +97,7 @@ int main()
 
 	// Take care of all the light related things
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	glm::vec3 voxelLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::vec3 lightPos = glm::vec3(2.5f, 0.8f, 4.0f);
 	glm::mat4 lightModel = glm::mat4(1.0f);
 	lightModel = glm::translate(lightModel, lightPos);
@@ -113,6 +114,10 @@ int main()
 	glUniformMatrix4fv(glGetUniformLocation(lightShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(lightModel));
 	glUniform4f(glGetUniformLocation(lightShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
 
+	testingShaders.Activate();
+	glUniform4f(glGetUniformLocation(testingShaders.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+	glUniform3f(glGetUniformLocation(testingShaders.ID, "lightColor2"), voxelLightColor.x, voxelLightColor.y, voxelLightColor.z);
+	glUniform3f(glGetUniformLocation(testingShaders.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 
 
 
@@ -123,29 +128,19 @@ int main()
 	// Creates camera object
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 
-
-	/*
-	* I'm doing this relative path thing in order to centralize all the resources into one folder and not
-	* duplicate them between tutorial folders. You can just copy paste the resources from the 'Resources'
-	* folder and then give a relative path from this folder to whatever resource you want to get to.
-	* Also note that this requires C++17, so go to Project Properties, C/C++, Language, and select C++17
-	*/
-	//std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
-	//std::string modelPath = "/Resources/YoutubeOpenGL 13 - Model Loading/models/bunny/scene.gltf";
-
 	// Load in a model
 	Model model("Models/Sponza-glTF/Sponza.gltf");
 	//("Models/Stanford_Bunny/scene.gltf");
 
 	// Original code from the tutorial
 	// Model model("models/bunny/scene.gltf");
-	model.DrawVoxels(voxelShader, camera);
+	//model.DrawVoxels(voxelShader, camera);
 
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
 		// Specify the color of the background
-		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		glClearColor(0.5f, 0.6f, 0.8f, 1.0f);
 		// Clean the back buffer and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -155,9 +150,10 @@ int main()
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 
 		// Draw a model
-		//model.DrawVoxels(voxelShader, camera);
-		model.Draw(defaultShader, camera);
-		model.Draw(normalShader, camera);
+		//model.Draw(voxelShader, camera);
+		//model.Draw(defaultShader, camera);
+		//model.Draw(normalShader, camera);
+		model.DrawVoxels(testingShaders, camera);
 
 		// Tells OpenGL which Shader Program we want to use
 		lightShader.Activate();
@@ -174,13 +170,11 @@ int main()
 		// Take care of all GLFW events
 		glfwPollEvents();
 	}
-
-
-
 	// Delete all the objects we've created
 	defaultShader.Delete();
 	voxelShader.Delete();
 	lightShader.Delete();
+	testingShaders.Delete();
 	// Delete window before ending the program
 	glfwDestroyWindow(window);
 	// Terminate GLFW before ending the program

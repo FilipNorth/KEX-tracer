@@ -2,6 +2,7 @@
 
 Model::Model(const char* file)
 {
+
 	// Make a JSON object
 	std::string text = get_file_contents(file);
 	JSON = json::parse(text);
@@ -31,11 +32,11 @@ void Model::DrawVoxels(Shader& shader, Camera& camera)
 {
 	unsigned int j = 0;
 	// Go over all meshes and draw each one
-	for (unsigned int i = 0; i < voxels.size(); i++)
+	for (unsigned int i = 0; i < 1; i++)
 	{
 		// Safety check to prevent out-of-bounds access
 		//std::cout << meshes[i].textures[0].ID << "\n";
-		voxels[i].Voxelization::Draw(shader, camera, voxel_texture_, matricesMeshes[0]);
+		voxels[0].Voxelization::Draw(shader, camera, matricesMeshes[0]);
 	}
 }
 
@@ -44,6 +45,10 @@ void Model::loadMesh(unsigned int indMesh) {
 	const json& primitives = mesh["primitives"];
 
 	std::vector<std::vector<Texture>> textures = getTextures();
+
+	std::vector<GLfloat> voxelTextureData(64 * 64 * 64 * 4, 0.0f);
+	Texture3D voxelTexture(voxelTextureData, 64, 64, 64, 4);
+
 	// Iterate over all primitives in the mesh
 	for (const auto& primitive : primitives) {
 		// Safely obtain accessor indices with fallbacks
@@ -70,13 +75,9 @@ void Model::loadMesh(unsigned int indMesh) {
 		// Combine the vertices, indices, and textures into a mesh and add to the model
 		meshes.push_back(Mesh(vertices, indices, textures[materialInd]));
 
-		voxels.push_back(Voxelization(vertices, indices, textures[materialInd]));
+		voxels.push_back(Voxelization(vertices, indices, textures[materialInd], voxelTexture));
 	}
-	// Voxel texture
-	int voxel_field_size_ = 512;
-	voxel_texture_ = Texture3D(voxel_field_size_, voxel_field_size_, voxel_field_size_, GL_RGBA8, 5);
-	voxel_texture_.set_wrap(GL_CLAMP_TO_BORDER);
-	voxel_texture_.set_min_mag(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+
 }
 
 

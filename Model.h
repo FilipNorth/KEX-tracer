@@ -28,7 +28,7 @@ private:
 	std::vector<glm::quat> rotationsMeshes;
 	std::vector<glm::vec3> scalesMeshes;
 	std::vector<glm::mat4> matricesMeshes;
-	Texture3D voxel_texture_;
+	Texture3D * voxel_texture_ = nullptr;
 
 	
 

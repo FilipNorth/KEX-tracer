@@ -20,12 +20,8 @@ uniform mat4 translation;
 uniform mat4 rotation;
 uniform mat4 scale;
 
-void main() {
-	data_out.Normal = aNormal;
-	data_out.color = aColor;
-	data_out.texCoord = mat2(0.0, -1.0, 1.0, 0.0) * aTexCoords;
-	data_out.projection = camMatrix;
-    data_out.crntPos = vec3(model * translation * rotation * scale * vec4(aPos, 1.0f));
-    gl_Position = camMatrix*vec4(data_out.crntPos, 1.0f);
-
+void main(){
+	vec3 crntPos = vec3(camMatrix * vec4(aPos, 1));
+	vec3 Normal = normalize(mat3(transpose(inverse(camMatrix))) * aNormal);
+	//gl_Position = P * V * vec4(crntPos, 1);
 }

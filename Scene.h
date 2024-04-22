@@ -1,34 +1,29 @@
 #pragma once
-#include <glad/glad.h>
+
 #include <vector>
-class Scene
-{
+
+#include <glad/glad.h>
+
+//#include "../Graphic/Lighting/PointLight.h"
+#include "Camera.h"
+
+class MeshRenderer;
+
+/// <summary> The scene represents a 3D world populated with renderers, cameras and lights. </summary>
+class Scene {
 public:
-	Scene();
-	std::vector<GLfloat> InsertVertices(std::vector<GLfloat> vertices, float xPos, float yPos, float r, float g, float b);
+	/// <summary> The main camera used for rendering. </summary>
+	Camera* renderingCamera;
 
-	std::vector<GLuint> InsertIndices(
-		std::vector<GLuint> indices,
-		GLuint topIndex,
-		GLuint bottomLeftIndex,
-		GLuint bottomRightIndex
-	);
+	std::vector<MeshRenderer*> renderers;
+	//std::vector<PointLight> pointLights;
 
-	std::vector<GLfloat> CircleVertices(
-		std::vector<GLfloat> vertices,
-		float radius,
-		float x,
-		float y,
-		float r,
-		float g,
-		float b,
-		int triangles
-	);
+	/// <summary> Updates the scene. Is called pre-render. </summary>
+	virtual void update() = 0;
 
-	std::vector<GLuint> CircleIndices(
-		std::vector<GLuint> indices,
-		int triangles
-	);
+	/// <summary> Initializes the scene. Is called after construction, but before update and render. </summary>
+	virtual void init(unsigned int viewportWidth, unsigned int viewportHeight) = 0;
 
+	/// <summary> Creates a new scene. Does not initialize it. </summary>
+	Scene() {}
 };
-
