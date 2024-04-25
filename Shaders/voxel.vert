@@ -1,27 +1,17 @@
 #version 460 core
 
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec3 aNormal;
+uniform mat4 V;
+
+layout (location = 0) in vec3 Position;
+layout (location = 1) in vec3 Normal;
 layout(location = 2) in vec3 aColor;
-layout(location = 3) in vec2 aTexCoords;
+layout (location = 3) in vec2 texcoord;
+out vec2 textureCoordinateFrag; 
 
-out DATA{
-    vec3 Normal;
-    vec3 color;
-    vec2 texCoord;
-    mat4 projection;
-    vec3 crntPos;
-} data_out;
-
-
-uniform mat4 camMatrix;
-uniform mat4 model;
-uniform mat4 translation;
-uniform mat4 rotation;
-uniform mat4 scale;
+// Scales and bias a given vector (i.e. from [-1, 1] to [0, 1]).
+vec2 scaleAndBias(vec2 p) { return 0.5f * p + vec2(0.5f); }
 
 void main(){
-	vec3 crntPos = vec3(camMatrix * vec4(aPos, 1));
-	vec3 Normal = normalize(mat3(transpose(inverse(camMatrix))) * aNormal);
-	//gl_Position = P * V * vec4(crntPos, 1);
+	textureCoordinateFrag = scaleAndBias(Position.xy);
+	gl_Position = vec4(Position, 1);
 }

@@ -74,7 +74,7 @@ int main()
 
 	// Generates Shader object using shaders default.vert and default.frag
 	Shader defaultShader("Shaders/default.vert", "Shaders/default.geom", "Shaders/default.frag");
-	Shader voxelShader("Shaders/voxel.vert", "Shaders/voxel.geom", "Shaders/voxel.frag");
+	Shader voxelShader("Shaders/voxel.vert", "Shaders/voxel.frag");
 	Shader normalShader("Shaders/default.vert", "Shaders/normal.geom", "Shaders/normal.frag");
 
 	Shader testingShaders("Shaders/voxelTesting.vert", "Shaders/voxelTesting.geom", "Shaders/voxelTesting.frag");
@@ -150,10 +150,10 @@ int main()
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 
 		// Draw a model
-		//model.Draw(voxelShader, camera);
+		model.DrawVoxels(testingShaders, camera);
+		model.DrawVoxels(voxelShader, camera);
 		//model.Draw(defaultShader, camera);
 		//model.Draw(normalShader, camera);
-		model.DrawVoxels(testingShaders, camera);
 
 		// Tells OpenGL which Shader Program we want to use
 		lightShader.Activate();
@@ -170,6 +170,8 @@ int main()
 		// Take care of all GLFW events
 		glfwPollEvents();
 	}
+
+
 	// Delete all the objects we've created
 	defaultShader.Delete();
 	voxelShader.Delete();

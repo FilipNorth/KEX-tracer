@@ -53,6 +53,8 @@ void Voxelization::Draw
 		textures[i].Bind();
 	}
 
+
+
 	// Activate and bind the 3D texture
 	voxelTexture.Activate(shader.ID, "texture3D", textures.size());
 

@@ -52,9 +52,9 @@ void main(){
 	// Calculate diffuse lighting fragment contribution.
 	const uint maxLights = 1;
 	for(uint i = 0; i < maxLights; ++i) color += calculatePointLight();
-vec3 spec = texture(specular0, vec2(1.0)).rgb;
-vec3 diff = texture(diffuse0, vec2(1.0)).rgb;
-	color = (diff + spec) * color;
+	vec3 spec = texture(specular0, vec2(1.0)).rgb;
+	vec3 diff = texture(diffuse0, vec2(1.0)).rgb;
+	color = vec3(0.27, 0.79, 0.12);
 
 	// Output lighting to 3D texture.
 	vec3 voxel = scaleAndBias(worldPositionFrag);
@@ -62,5 +62,5 @@ vec3 diff = texture(diffuse0, vec2(1.0)).rgb;
 	float alpha = pow(1, 4); // For soft shadows to work better with transparent materials.
 	vec4 res = alpha * vec4(vec3(color), 1);
     imageStore(texture3D, ivec3(dim * voxel), res);
-    FragColor = vec4(color, 1);
+    //FragColor = vec4(color, 1);
 }

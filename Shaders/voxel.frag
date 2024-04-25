@@ -1,136 +1,49 @@
 #version 460 core
 
-// Outputs colors in RGBA
-out vec4 FragColor;
+#define INV_STEP_LENGTH (1.0f/STEP_LENGTH)
+#define STEP_LENGTH 0.005f
 
-// Imports the current position from the Vertex Shader
-in vec3 crntPos;
-// Imports the normal from the Vertex Shader
-in vec3 Normal;
-// Imports the color from the Vertex Shader
-in vec3 color;
-// Imports the texture coordinates from the Vertex Shader
-in vec2 texCoord;
+uniform sampler2D textureBack; // Unit cube back FBO.
+uniform sampler2D textureFront; // Unit cube front FBO.
+uniform sampler3D texture3D; // Texture in which voxelization is stored.
+uniform vec3 camPos; // World camera position.
+uniform int state = 0; // Decides mipmap sample level.
 
-struct PointLight_t {
-  vec3 position; //offset 0
-  vec3 color; //offset 16
-  float intensity; //offset 32
-};
-
-struct DirectionalLight_t {
-  vec3 direction; //offset 0
-  vec3 color; //offset 16
-  float intensity; //offset 32
-};
-
-layout (rgba8) uniform coherent volatile image3D voxel_field;
-//layout (rgba8) uniform coherent volatile image3D voxel_field;
-// Gets the Texture Units from the main function
 uniform sampler2D diffuse0;
 uniform sampler2D specular0;
 uniform sampler2D normalMap0;
 uniform sampler2D metallicRoughnessMap0; 
-// Assuming a combined texture for simplicity
-// Gets the color of the light from the main function
-uniform vec4 lightColor;
-// Gets the position of the light from the main function
-uniform vec3 lightPos;
-// Gets the position of the camera from the main function
-uniform vec3 camPos;
 
-vec4 albedo = texture(diffuse0, texCoord);
-vec4 specular = texture(specular0, texCoord);
-vec4 normal = texture(normalMap0, texCoord);
-vec4 metallicRoughness = texture(metallicRoughnessMap0, texCoord);
+in vec2 textureCoordinateFrag; 
+out vec4 FragColor;
 
+// Scales and bias a given vector (i.e. from [-1, 1] to [0, 1]).
+vec3 scaleAndBias(vec3 p) { return 0.5f * p + vec3(0.5f); }
 
-vec4 pointLight()
-{	
-	// used in two variables so I calculate it here to not have to do it twice
-	vec3 lightVec = lightPos - crntPos;
+// Returns true if p is inside the unity cube (+ e) centered on (0, 0, 0).
+bool isInsideCube(vec3 p, float e) { return abs(p.x) < 1 + e && abs(p.y) < 1 + e && abs(p.z) < 1 + e; }
 
-	// intensity of light with respect to distance
-	float dist = length(lightVec);
-	float a = 0.01; //og:3.0
-	float b = 0.007; //og:0.7
-	float inten = 1.0f / (a * dist * dist + b * dist + 1.0f);
-
-	// ambient lighting
-	float ambient = 0.20f;
-
-	// diffuse lighting
-	vec3 normal = normalize(Normal);
-	vec3 lightDirection = normalize(lightVec);
-	float diffuse = max(dot(normal, lightDirection), 0.0f);
-
-	// specular lighting
-	float specularLight = 0.50f;
-	vec3 viewDirection = normalize(camPos - crntPos);
-	vec3 reflectionDirection = reflect(-lightDirection, normal);
-	float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
-	float specular = specAmount * specularLight;
-
-	return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
-}
+void main() {
+	//Create basic test square
 
 
+	const float mipmapLevel = state;
 
+	// Initialize ray.
+	const vec3 origin = isInsideCube(camPos, 0.2f) ? 
+		camPos : texture(diffuse0, textureCoordinateFrag).xyz;
+	vec3 direction = texture(diffuse0, textureCoordinateFrag).xyz - origin;
+	const uint numberOfSteps = uint(INV_STEP_LENGTH * length(direction));
+	direction = normalize(direction);
 
-vec3 calculate_light(vec3 light_dir, vec3 light_color, float light_intensity,
-		     bool attenuation) {
-  float light_distance = length(light_dir);
-
-  float NdotL = dot(Normal, normalize(light_dir));
-  float intensity = max(NdotL, 0.);
-  vec3 color = albedo.xyz * intensity * light_color * light_intensity;
-
-  if (attenuation)
-    color /= light_distance + 1;
-
-  return color;
-}
-
-vec3 shade() {
-  vec3 color = vec3(0);
-
-  const int DirectionalLightCount = 1;
-  const int PointLightCount = 1;
-
-  DirectionalLight_t DirectionalLights[DirectionalLightCount];
-  DirectionalLights[0] = DirectionalLight_t(vec3(.2, -1, 0),
-					    vec3(1.),
-					    1.);
-
-
-  PointLight_t PointLights[PointLightCount];
-  PointLights[0] = PointLight_t(vec3(0, 2, 0), vec3(1), 10.);
-
-  for (int i = 0; i < PointLightCount; i++) {
-    PointLight_t ls = PointLights[i];
-    vec3 light_dir = ls.position - crntPos;
-    color += calculate_light(light_dir, ls.color, ls.intensity, true);
-  }
-
-  return color;
-  for (int i = 0; i < DirectionalLightCount; i++) {
-    DirectionalLight_t ls = DirectionalLights[i];
-    vec3 light_dir = -ls.direction;
-    color += calculate_light(light_dir, ls.color, ls.intensity, false);
-  }
-
-  return color;
-}
-
-void main(){
-  ivec3 image_size = imageSize(voxel_field);
-
-  vec4 res  = vec4(shade(), 1.0);
-
-  //float shadow = shadow_calculation(lightPos);
-  //res.rgb *= 0.5 * (1.0 - shadow) + 0.5;
-  res.rgb = pow(res.rgb, vec3(1.0 / 2.2));
-
-  imageStore(voxel_field,
-	     ivec3(image_size * (0.5 * crntPos + 0.5)), res);
+	// Trace.
+	FragColor = vec4(0.0, 1.0, 0.25, 0.0);
+	for(uint step = 0; step < numberOfSteps && FragColor.a < 0.99f; ++step) {
+		const vec3 currentPoint = origin + STEP_LENGTH * step * direction;
+		vec3 coordinate = scaleAndBias(currentPoint);
+		vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint), mipmapLevel);
+		FragColor += (1.0f - FragColor.a) * currentSample;
+	} 
+	//FragColor.rgb = pow(FragColor.rgb, vec3(1.0 / 2.2));
+	FragColor.rgb = vec3(0.0, 1.0, 0.25);
 }
