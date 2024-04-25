@@ -27,6 +27,12 @@ uniform vec3 lightPos;
 // Gets the position of the camera from the main function
 uniform vec3 camPos;
 
+//!!!!
+//layout(RGBA8) uniform image3D texture3D;
+//!!!!!
+
+vec3 scaleAndBias(vec3 p) { return 0.5f * p + vec3(0.5f); }
+
 
 vec4 pointLight()
 {	
@@ -108,6 +114,10 @@ vec4 spotLight()
 
 void main()
 {
+	ivec3 dim = imageSize(texture3D);
+
 	// outputs final color
-	FragColor = pointLight();
+	//FragColor = pointLight();
+	imageStore(texture3D, ivec3(dim * crntPos), pointLight());
+
 }

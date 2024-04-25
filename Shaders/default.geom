@@ -19,11 +19,11 @@ in DATA
 
 //voxelization:
 void main(){
-  vec3 p1 = gl_in[0].gl_Position.xyz;
-  vec3 p2 = gl_in[1].gl_Position.xyz;
-  vec3 p3 = gl_in[2].gl_Position.xyz;
+  vec3 p1 = data_in[0].crntPos;
+  vec3 p2 = data_in[1].crntPos;
+  vec3 p3 = data_in[2].crntPos;
 
-  vec3 projs = abs( cross( p2-p1, p3-p1 ) );
+  vec3 surfNorm = abs( cross( p2-p1, p3-p1 ) );
 
   for(int i = 0; i < 3; i++){
 
@@ -32,13 +32,13 @@ void main(){
     color = data_in[i].color;
     texCoord = data_in[i].texCoord;
 
-    vec3 p = ( p1 + ( gl_in[i].gl_Position.xyz - p1 ) );
-    if( projs.x > projs.y && projs.x > projs.z ){
-      gl_Position = vec4( p.yz, 0, 1 );
-    } else if (projs.y > projs.z){
-      gl_Position = vec4( p.xz, 0, 1 );
+    //vec3 p = ( p1 + ( gl_in[i].gl_Position.xyz - p1 ) );
+    if( surfNorm.x > surfNorm.y && surfNorm.x > surfNorm.z ){
+      gl_Position = vec4( crntPos.yz, 0, 1 );
+    } else if (surfNorm.y > surfNorm.z){
+      gl_Position = vec4( crntPos.xz, 0, 1 );
     } else {
-      gl_Position = vec4( p.xy, 0, 1 );
+      gl_Position = vec4( crntPos.xy, 0, 1 );
     }
     EmitVertex();
   }
