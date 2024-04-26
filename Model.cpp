@@ -36,7 +36,7 @@ void Model::DrawVoxels(Shader& shader, Camera& camera)
 	{
 		// Safety check to prevent out-of-bounds access
 		//std::cout << meshes[i].textures[0].ID << "\n";
-		voxels[i].Voxelization::Draw(shader, voxel_texture_);
+		voxels[i].Voxelization::Draw(shader, voxel_texture_, camera);
 	}
 }
 

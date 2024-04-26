@@ -160,7 +160,7 @@ int main()
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 		// Draw a model
 		model.DrawVoxels(testingShaders, camera);
-		//model.Draw(voxelShader, camera);
+		//model.DrawVoxels(voxelShader, camera);
 		//model.Draw(defaultShader, camera);
 		//model.Draw(normalShader, camera);
 

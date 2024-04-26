@@ -24,7 +24,8 @@ public:
 	void Draw
 	(
 		Shader& voxelShader, // This is the shader that will handle the voxelization
-		Texture3D *voxelTexture // ID of the 3D texture to store voxel data
+		Texture3D *voxelTexture, // ID of the 3D texture to store voxel data
+		Camera& camera
 	);
 
 private:
