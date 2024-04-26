@@ -4,20 +4,13 @@ layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec3 aColor;
 layout(location = 3) in vec2 aTexCoords;
 
-uniform mat4 camMatrix;
 uniform mat4 model;
-uniform mat4 translation;
-uniform mat4 rotation;
-uniform mat4 scale;
 
 out vec3 worldPositionGeom;
 out vec3 normalGeom;
 
-void main(){
-    mat4 projection = mat4(1.0);
-
-
-    worldPositionGeom = vec3(model * vec4(aPos, 1)); 
-    normalGeom = normalize(mat3(transpose(inverse(model))) * aNormal);  
-    gl_Position = projection * camMatrix * vec4(worldPositionGeom, 1);  
+void main() {
+    worldPositionGeom = vec3(model * vec4(aPos, 1));
+    normalGeom = normalize(mat3(transpose(inverse(model))) * aNormal);
+    gl_Position = model * vec4(aPos, 1); // Just pass through transformed position
 }

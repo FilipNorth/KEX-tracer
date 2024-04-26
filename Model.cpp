@@ -32,11 +32,11 @@ void Model::DrawVoxels(Shader& shader, Camera& camera)
 {
 	unsigned int j = 0;
 	// Go over all meshes and draw each one
-	for (unsigned int i = 0; i < 1; i++)
+	for (unsigned int i = 0; i < voxels.size(); i++)
 	{
 		// Safety check to prevent out-of-bounds access
 		//std::cout << meshes[i].textures[0].ID << "\n";
-		voxels[0].Voxelization::Draw(shader, camera, matricesMeshes[0]);
+		voxels[i].Voxelization::Draw(shader, voxel_texture_);
 	}
 }
 
@@ -47,7 +47,7 @@ void Model::loadMesh(unsigned int indMesh) {
 	std::vector<std::vector<Texture>> textures = getTextures();
 
 	std::vector<GLfloat> voxelTextureData(64 * 64 * 64 * 4, 0.0f);
-	Texture3D voxelTexture(voxelTextureData, 64, 64, 64, 4);
+	voxel_texture_ = new Texture3D(voxelTextureData, 64, 64, 64, true);
 
 	// Iterate over all primitives in the mesh
 	for (const auto& primitive : primitives) {
@@ -75,7 +75,7 @@ void Model::loadMesh(unsigned int indMesh) {
 		// Combine the vertices, indices, and textures into a mesh and add to the model
 		meshes.push_back(Mesh(vertices, indices, textures[materialInd]));
 
-		voxels.push_back(Voxelization(vertices, indices, textures[materialInd], voxelTexture));
+		voxels.push_back(Voxelization(vertices, indices, textures[materialInd], voxel_texture_));
 	}
 
 }

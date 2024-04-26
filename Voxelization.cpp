@@ -2,12 +2,12 @@
 
 Voxelization::Voxelization(std::vector <Vertex>& vertices, 
 	std::vector <GLuint>& indices, 
-	std::vector <Texture>& textures, Texture3D &voxelTexture)
+	std::vector <Texture>& textures, Texture3D *voxelTexture)
 {
 	Voxelization::vertices = vertices;
 	Voxelization::indices = indices;
 	Voxelization::textures = textures;
-	Voxelization::voxelTexture = voxelTexture;
+	Voxelization::voxelTexture = *voxelTexture;
 
 	VAO.Bind();
 	// Generates Vertex Buffer Object and links it to vertices
@@ -27,62 +27,49 @@ Voxelization::Voxelization(std::vector <Vertex>& vertices,
 
 void Voxelization::Draw
 (
-	Shader& shader,
-	Camera& camera,
-	glm::mat4 matrix,
-	glm::vec3 translation,
-	glm::quat rotation,
-	glm::vec3 scale
-) {
-	// Bind shader to be able to access uniforms
+        Shader& voxelShader, // This is the shader that will handle the voxelization
+        Texture3D *voxelTexture // ID of the 3D texture to store voxel data
+       )
+{
 
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-
-	shader.Activate();
-	VAO.Bind();
+    voxelShader.Activate();
+    VAO.Bind();
 
 
 
-	for (unsigned int i = 0; i < textures.size(); i++)
-	{
-		std::string num;
-		std::string type = textures[i].type;
+    // Bind the voxelization shader and pass necessary uniforms
+    //glm::mat4 modelMatrix = glm::mat4(0.00800000037997961);
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), 64, 64, 64);  
+    // Ensure no textures interfere with the process
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-		textures[i].texUnit(shader, (type + "0").c_str(), textures[i].unit);
-		textures[i].Bind();
-	}
+    voxelTexture->Activate(voxelShader.ID, "voxelTexture", 0);
 
+    // Disable unnecessary OpenGL settings
 
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
 
-	// Activate and bind the 3D texture
-	voxelTexture.Activate(shader.ID, "texture3D", textures.size());
+    // Setup the viewport to match the grid size if needed
+    //glViewport(0, 0, 64, 64);
 
-	// Take care of the camera Matrix
-	glUniform3f(glGetUniformLocation(shader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
-	camera.Matrix(shader, "camMatrix");
+    // Draw the mesh as points or whatever form is required for voxelization
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
-	// Initialize matrices
-	glm::mat4 trans = glm::mat4(1.0f);
-	glm::mat4 rot = glm::mat4(1.0f);
-	glm::mat4 sca = glm::mat4(1.0f);
-	glm::mat4 x = glm::mat4(1.0f);
+    // Restore OpenGL settings
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
-	// Transform the matrices to their correct form
-	trans = glm::translate(trans, translation);
-	rot = glm::mat4_cast(rotation);
-	sca = glm::scale(sca, scale);
-
-	// Push the matrices to the vertex shader
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "translation"), 1, GL_FALSE, glm::value_ptr(trans));
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "rotation"), 1, GL_FALSE, glm::value_ptr(rot));
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "scale"), 1, GL_FALSE, glm::value_ptr(sca));
-	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(matrix));
-
-	// Draw the actual mesh
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+     GLenum gl_error = glGetError();
+     if (gl_error != GL_NO_ERROR) {
+         std::cout << "OpenGL Error: " << gl_error << std::endl;
+     }
 
 
-	VAO.Unbind();
+    VAO.Unbind();
 }
 

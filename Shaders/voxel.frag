@@ -37,7 +37,7 @@ void main() {
 	direction = normalize(direction);
 
 	// Trace.
-	FragColor = vec4(0.0, 1.0, 0.25, 0.0);
+	FragColor = vec4(0.89, 0.0, 0.0, 0.0);
 	for(uint step = 0; step < numberOfSteps && FragColor.a < 0.99f; ++step) {
 		const vec3 currentPoint = origin + STEP_LENGTH * step * direction;
 		vec3 coordinate = scaleAndBias(currentPoint);

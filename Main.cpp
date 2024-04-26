@@ -151,7 +151,7 @@ int main()
 
 		// Draw a model
 		model.DrawVoxels(testingShaders, camera);
-		model.DrawVoxels(voxelShader, camera);
+		//model.DrawVoxels(voxelShader, camera);
 		//model.Draw(defaultShader, camera);
 		//model.Draw(normalShader, camera);
 
