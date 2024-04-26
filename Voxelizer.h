@@ -10,11 +10,38 @@
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+//lightCube, reveals lightPos more easily
+GLfloat lightVert[] =
+{ //     COORDINATES     // (local coords, are moved by lightMatrix to global in lightVertShader)
+    -0.1f, -0.1f,  0.1f,
+    -0.1f, -0.1f, -0.1f,
+     0.1f, -0.1f, -0.1f,
+     0.1f, -0.1f,  0.1f,
+    -0.1f,  0.1f,  0.1f,
+    -0.1f,  0.1f, -0.1f,
+     0.1f,  0.1f, -0.1f,
+     0.1f,  0.1f,  0.1f
+};
+
+GLuint lightInd[] =
+{
+    0, 1, 2,
+    0, 2, 3,
+    0, 4, 7,
+    0, 7, 3,
+    3, 7, 6,
+    3, 6, 2,
+    2, 6, 5,
+    2, 5, 1,
+    1, 5, 4,
+    1, 4, 0,
+    4, 5, 6,
+    4, 6, 7
+};
+
 // Function prototypes
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
-std::string loadShaderSource(const char* filename);
-GLuint compileShader(const char* file, GLenum type);
 
 // Main function
 int main1() {
@@ -32,22 +59,44 @@ int main1() {
         return -1;
     }
     glfwMakeContextCurrent(window);
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-    // Compile shaders
+    // Compile and link shaders
     Shader shader("Shaders/voxelTesting.vert", "Shaders/voxelTesting.geom", "Shaders/voxelTesting.frag");
 
-    // Check max geometry output vertices
-    GLint maxGeometryOutputVertices;
-    glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES, &maxGeometryOutputVertices);
-    std::cout << "Max Geometry Output Vertices: " << maxGeometryOutputVertices << std::endl;
+    // Shader for light cube
+    Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
+    // Generates Vertex Array Object and binds it
+    VAO lightVAO;
+    lightVAO.Bind();
+    // Generates Vertex Buffer Object and links it to vertices
+    VBO lightVBO(lightVert, sizeof(lightVert));
+    // Generates Element Buffer Object and links it to indices
+    EBO lightEBO(lightInd, sizeof(lightInd));
+    // Links VBO attributes such as coordinates and colors to VAO
+    lightVAO.LinkAttrib(lightVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
+    // Unbind all to prevent accidentally modifying them
+    lightVAO.Unbind();
+    lightVBO.Unbind();
+    lightEBO.Unbind();
 
-    // Create shader program
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, shader.program);
-    glLinkProgram(shaderProgram);
+    // Take care of all the light related things
+    glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    glm::vec3 voxelLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 lightPos = glm::vec3(2.5f, 0.8f, 4.0f);
+    glm::mat4 lightModel = glm::mat4(1.0f);
+    lightModel = glm::translate(lightModel, lightPos);
 
+    shader.Activate();
+    glUniform4f(glGetUniformLocation(shader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+    glUniform3f(glGetUniformLocation(shader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
     // Set up vertex data and buffers
+
+
     float vertices[] = {
         -0.5f, -0.5f, -0.5f,
          0.5f, -0.5f, -0.5f,
@@ -70,10 +119,10 @@ int main1() {
     // Render loop
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(0.7f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
+        lightShader.Activate();  // Assuming Shader class has a use() method to activate the shader program
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -94,25 +143,4 @@ void processInput(GLFWwindow* window) {
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
-}
-
-std::string loadShaderSource(const char* filename) {
-    std::ifstream file(filename);
-    std::stringstream buffer;
-    if (file) {
-        buffer << file.rdbuf();
-        file.close();
-        return buffer.str();
-    }
-    std::cerr << "Error loading shader: " << filename << std::endl;
-    return "";
-}
-
-GLuint compileShader(const char* file, GLenum type) {
-    std::string src = loadShaderSource(file);
-    GLuint shader = glCreateShader(type);
-    const char* shaderSrc = src.c_str();
-    glShaderSource(shader, 1, &shaderSrc, nullptr);
-    glCompileShader(shader);
-    return shader;
 }

@@ -24,6 +24,8 @@ public:
 	/// <summary> Clears this texture using a given clear color. </summary>
 	void Clear(GLfloat clearColor[4]);
 
+	void BindAsImage(unsigned int unit, unsigned int level, bool layered, unsigned int layer, GLenum access, GLenum format);
+
 
 private:
 	int width, height, depth;

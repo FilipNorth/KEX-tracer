@@ -68,16 +68,16 @@ int main()
 	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
 	glViewport(0, 0, width, height);
 
-
-
-
-
 	// Generates Shader object using shaders default.vert and default.frag
 	Shader defaultShader("Shaders/default.vert", "Shaders/default.geom", "Shaders/default.frag");
 	Shader voxelShader("Shaders/voxel.vert", "Shaders/voxel.frag");
 	Shader normalShader("Shaders/default.vert", "Shaders/normal.geom", "Shaders/normal.frag");
 
 	Shader testingShaders("Shaders/voxelTesting.vert", "Shaders/voxelTesting.geom", "Shaders/voxelTesting.frag");
+	GLenum gl_error = glGetError();
+	if (gl_error != GL_NO_ERROR) {
+		std::cout << "OpenGL Error: " << gl_error << std::endl;
+	}
 
 	// Shader for light cube
 	Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
@@ -119,8 +119,18 @@ int main()
 	glUniform3f(glGetUniformLocation(testingShaders.ID, "lightColor2"), voxelLightColor.x, voxelLightColor.y, voxelLightColor.z);
 	glUniform3f(glGetUniformLocation(testingShaders.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 
+	gl_error = glGetError();
+	if (gl_error != GL_NO_ERROR) {
+		std::cout << "OpenGL Error: " << gl_error << std::endl;
+	}
 
-
+	GLint val = GL_FALSE;
+	glGetShaderiv(testingShaders.ID, GL_COMPILE_STATUS, &val);
+	if (val != GL_TRUE)
+	{
+		std::cout << "Compilation failed in main" << std::endl;
+		// compilation failed
+	}
 
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
@@ -148,10 +158,9 @@ int main()
 		camera.Inputs(window);
 		// Updates and exports the camera matrix to the Vertex Shader
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
-
 		// Draw a model
 		model.DrawVoxels(testingShaders, camera);
-		//model.DrawVoxels(voxelShader, camera);
+		//model.Draw(voxelShader, camera);
 		//model.Draw(defaultShader, camera);
 		//model.Draw(normalShader, camera);
 
