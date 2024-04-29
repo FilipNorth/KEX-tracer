@@ -76,9 +76,10 @@ int main()
 
 	//Load GLAD so it configures OpenGL
 	gladLoadGL();
+	int voxelTextureSize = 128;
 	// Specify the viewport of OpenGL in the Window
 	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
-	glViewport(0, 0, 64, 64);
+	glViewport(0, 0, voxelTextureSize, voxelTextureSize);
 
 	// Generates Shader object using shaders default.vert and default.frag
 	Shader defaultShader("Shaders/default.vert", "Shaders/default.geom", "Shaders/default.frag");
@@ -160,17 +161,16 @@ int main()
 	Camera camera(width, height, glm::vec3(30.0f, 45.0f, 12.0f));
 
 	// Load in a model
-	Model model("Models/Sponza-glTF/Sponza.gltf");
+	Model model("Models/Sponza-glTF/Sponza.gltf", voxelTextureSize);
 	//("Models/Stanford_Bunny/scene.gltf");
 
 	// Original code from the tutorial
 	// Model model("models/bunny/scene.gltf");
 	//model.DrawVoxels(voxelShader, camera);
-
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
-		glViewport(0, 0, 64, 64);
+		glViewport(0, 0, voxelTextureSize, voxelTextureSize);
 		// Specify the color of the background
 		glClearColor(0.5f, 0.6f, 0.8f, 1.0f);
 		// Clean the back buffer and depth buffer

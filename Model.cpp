@@ -1,8 +1,9 @@
 #include "Model.h"
 
-Model::Model(const char* file)
+Model::Model(const char* file, int voxelTextureSize)
 {
-
+	std::vector<GLfloat> voxelTextureData(voxelTextureSize * voxelTextureSize * voxelTextureSize * 4, 0.0f);
+	voxel_texture_ = new Texture3D(voxelTextureData, voxelTextureSize, voxelTextureSize, voxelTextureSize, true);
 	// Make a JSON object
 	std::string text = get_file_contents(file);
 	JSON = json::parse(text);
@@ -59,8 +60,6 @@ void Model::loadMesh(unsigned int indMesh) {
 	std::vector<std::vector<Texture>> textures = getTextures();
 
 	int voxelSize = 128;
-	std::vector<GLfloat> voxelTextureData(64 * 64 * 64 * 4, 0.0f);
-	voxel_texture_ = new Texture3D(voxelTextureData, 64, 64, 64, true);
 
 	// Iterate over all primitives in the mesh
 	for (const auto& primitive : primitives) {

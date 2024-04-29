@@ -76,7 +76,7 @@ void Voxelization::Draw
     glm::mat4 model = glm::translate(modelMatrix, camera.Position);
     //glm::mat4 modelMatrix = glm::mat4(1.0f);
     glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(voxel_projection_));
-    glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), 64, 64, 64);
+    glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), voxelTexture->width, voxelTexture->height, voxelTexture->depth);
 
     // Take care of the camera Matrix
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
@@ -148,11 +148,16 @@ void Voxelization::visualizeVoxels(
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+    glm::vec3 proj = glm::vec3(2048, 2048, 2048);
+    glm::mat4 voxel_projection_ = glm::ortho(-proj.x, proj.x,
+        -proj.y, proj.y,
+        proj.z, -proj.z);
+
     // Bind the voxelization shader and pass necessary uniforms
     glm::mat4 modelMatrix = glm::mat4(0.00800000037997961);
     //glm::mat4 modelMatrix = glm::mat4(1.0f);
-    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
-    glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), 64, 64, 64);
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(voxel_projection_));
+    glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), voxelTexture->width, voxelTexture->height, voxelTexture->depth);
 
     // Take care of the camera Matrix
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
