@@ -29,7 +29,8 @@ void Voxelization::Draw
 (
     Shader& voxelShader, // This is the shader that will handle the voxelization
     Texture3D* voxelTexture, // ID of the 3D texture to store voxel data
-    Camera& camera
+    Camera& camera, 
+    glm::mat4 modelMatrix
 )
 {
 
@@ -59,22 +60,45 @@ void Voxelization::Draw
 
     voxelTexture->BindAsImage(0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     //glBindImageTexture(0, voxelTexture->textureID, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glm::vec3 proj = glm::vec3(2048, 2048, 2048);
+    glm::mat4 voxel_projection_ = glm::ortho(-proj.x, proj.x,
+        -proj.y, proj.y,
+        proj.z, -proj.z);
 
+    glm::mat4 m = glm::mat4(1);
 
+    m[2][2] = -1.0f;
 
     // Bind the voxelization shader and pass necessary uniforms
     glm::vec3 position = { 0,0,0 }, scale = { 1,1,1 }, rotation = { 0,0,0 };
     glm::mat4 transform = glm::translate(position) * glm::mat4_cast(glm::quat(rotation)) * glm::scale(scale);
-    glm::mat4 modelMatrix = glm::mat4(1.0);
 
     glm::mat4 model = glm::translate(modelMatrix, camera.Position);
     //glm::mat4 modelMatrix = glm::mat4(1.0f);
-    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(voxel_projection_));
     glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), 64, 64, 64);
 
     // Take care of the camera Matrix
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
     camera.Matrix(voxelShader, "camMatrix");
+
+    // Initialize matrices
+    glm::mat4 trans = glm::mat4(1.0f);
+    glm::mat4 rot = glm::mat4(1.0f);
+    glm::mat4 sca = glm::mat4(1.0f);
+
+    glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::quat rotation2 = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+    // Transform the matrices to their correct form
+    trans = glm::translate(trans, translation);
+    rot = glm::mat4_cast(rotation2);
+    sca = glm::scale(sca, scale);
+
+    // Push the matrices to the vertex shader
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "translation"), 1, GL_FALSE, glm::value_ptr(trans));
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "rotation"), 1, GL_FALSE, glm::value_ptr(rot));
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "scale"), 1, GL_FALSE, glm::value_ptr(sca));
 
     // Ensure no textures interfere with the process
     //glBindTexture(GL_TEXTURE_2D, 0);

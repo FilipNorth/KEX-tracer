@@ -4,10 +4,12 @@ layout(triangle_strip, max_vertices = 3) out;
 
 in vec3 worldPositionGeom[];
 in vec3 normalGeom[];
+in vec2 texCoords[];
 
 out vec3 worldPositionFrag;
 out vec3 normalFrag;
 out vec4 debugColor; // Output color for debugging
+out vec2 tex;
 
 void main(){
 	const vec3 p1 = worldPositionGeom[1] - worldPositionGeom[0];
@@ -15,6 +17,7 @@ void main(){
 	const vec3 p = abs(cross(p1, p2)); 
 	for(uint i = 0; i < 3; ++i){
 		worldPositionFrag = worldPositionGeom[i];
+		tex = texCoords[i];
 		normalFrag = normalGeom[i];
 		if(p.z > p.x && p.z > p.y){
 			gl_Position = vec4(worldPositionFrag.x, worldPositionFrag.y, 0, 1);

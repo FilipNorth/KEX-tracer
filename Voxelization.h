@@ -26,7 +26,8 @@ public:
 	(
 		Shader& voxelShader, // This is the shader that will handle the voxelization
 		Texture3D *voxelTexture, // ID of the 3D texture to store voxel data
-		Camera& camera
+		Camera& camera, 
+		glm::mat4 modelMatrix = glm::mat4(1.0f)
 	);
 	void visualizeVoxels(
 		Shader& voxelShader, // This is the shader that will handle the voxelization

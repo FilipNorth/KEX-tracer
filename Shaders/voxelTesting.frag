@@ -31,6 +31,9 @@ uniform vec3 camPos;
 
 in vec3 worldPositionFrag;
 in vec3 normalFrag;
+in vec2 tex;
+
+vec4 diffuse_coord = texture(diffuse0, tex);
 
 vec3 calculatePointLight(){
 	const vec3 direction = normalize(lightPos - worldPositionFrag);
@@ -54,7 +57,7 @@ void main(){
 	color += calculatePointLight();
 	vec3 spec = vec3(texture(diffuse0, worldPositionFrag.xy));
 	vec3 diff = vec3(texture(diffuse0, worldPositionFrag.xy));
-	color = (diff + spec) * color + vec3(texture(diffuse0, worldPositionFrag.xy));
+	color = diffuse_coord.xyz * color + spec * 0.5f + diff * 0.5f;
 
  // Adjust worldPositionFrag to be within the texture's range before storing.
     vec3 voxel = scaleAndBias(worldPositionFrag);
