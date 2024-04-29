@@ -10,7 +10,7 @@ out vec3 worldPositionGeom;
 out vec3 normalGeom;
 
 void main() {
-    worldPositionGeom = vec3(model * vec4(aPos, 1));
+    worldPositionGeom = normalize(vec3(model * vec4(aPos.x, aPos.y, aPos.z, 1)));
     normalGeom = normalize(mat3(transpose(inverse(model))) * aNormal);
     gl_Position = model * vec4(aPos, 1); // Just pass through transformed position
 }

@@ -15,6 +15,7 @@ public:
 
 	void DrawVoxels(Shader& shader, Camera& camera);
 
+	void VisualizeVoxels(Shader& shader, Camera& camera);
 private:
 	// Variables for easy access
 	const char* file;

@@ -37,6 +37,18 @@ GLuint lightIndices[] =
 	4, 6, 7
 };
 
+GLfloat QuadVert[]{
+	-1. , -1. , 0.0,
+	1. , -1. , 0.0,
+	1. , 1. , 0.0,
+	-1. , 1. , 0.0
+};
+
+GLuint QuadInd[]{
+	0, 1, 2,
+	0, 2, 3
+};
+
 int main()
 {
 	//main1();
@@ -66,7 +78,7 @@ int main()
 	gladLoadGL();
 	// Specify the viewport of OpenGL in the Window
 	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, 64, 64);
 
 	// Generates Shader object using shaders default.vert and default.frag
 	Shader defaultShader("Shaders/default.vert", "Shaders/default.geom", "Shaders/default.frag");
@@ -83,6 +95,15 @@ int main()
 	Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
 	// Generates Vertex Array Object and binds it
 	VAO lightVAO;
+
+	VAO quadVAO;
+	quadVAO.Bind();
+	VBO quadVBO(QuadVert, sizeof(QuadVert));
+	EBO quadEBO(QuadInd, sizeof(QuadInd));
+
+	quadVAO.LinkAttrib(quadVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
+	quadVAO.Unbind();
+
 	lightVAO.Bind();
 	// Generates Vertex Buffer Object and links it to vertices
 	VBO lightVBO(lightVertices, sizeof(lightVertices));
@@ -136,7 +157,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	// Creates camera object
-	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
+	Camera camera(width, height, glm::vec3(30.0f, 45.0f, 12.0f));
 
 	// Load in a model
 	Model model("Models/Sponza-glTF/Sponza.gltf");
@@ -149,6 +170,7 @@ int main()
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
+		glViewport(0, 0, 64, 64);
 		// Specify the color of the background
 		glClearColor(0.5f, 0.6f, 0.8f, 1.0f);
 		// Clean the back buffer and depth buffer
@@ -160,19 +182,26 @@ int main()
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 		// Draw a model
 		model.DrawVoxels(testingShaders, camera);
-		//model.DrawVoxels(voxelShader, camera);
+		model.VisualizeVoxels(voxelShader, camera);
 		//model.Draw(defaultShader, camera);
 		//model.Draw(normalShader, camera);
 
 		// Tells OpenGL which Shader Program we want to use
-		lightShader.Activate();
+		//lightShader.Activate();
 		// Export the camMatrix to the Vertex Shader of the light cube
-		camera.Matrix(lightShader, "camMatrix");
+		//camera.Matrix(lightShader, "camMatrix");
 		// Bind the VAO so OpenGL knows to use it
-		lightVAO.Bind();
+		//lightVAO.Bind();
 		// Draw primitives, number of indices, datatype of indices, index of indices
-		glDrawElements(GL_TRIANGLES, sizeof(lightIndices) / sizeof(int), GL_UNSIGNED_INT, 0);
+		//glDrawElements(GL_TRIANGLES, sizeof(lightIndices) / sizeof(int), GL_UNSIGNED_INT, 0);
 
+		voxelShader.Activate();
+
+		quadVAO.Bind();
+
+		glViewport(0, 0, width, height);
+
+		glDrawElements(GL_TRIANGLES, sizeof(QuadInd) / sizeof(int), GL_UNSIGNED_INT, 0);
 
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);

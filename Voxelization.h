@@ -5,6 +5,7 @@
 #include"Texture.h"
 #include "Texture3D.h"
 #include "Scene.h"
+#include "Libraries/include/glm/glm.hpp"	
 
 class Voxelization
 {
@@ -27,10 +28,15 @@ public:
 		Texture3D *voxelTexture, // ID of the 3D texture to store voxel data
 		Camera& camera
 	);
+	void visualizeVoxels(
+		Shader& voxelShader, // This is the shader that will handle the voxelization
+		Texture3D* voxelTexture, // ID of the 3D texture to store voxel data
+		Camera& camera
+	);
 
 private:
 	Shader * voxelizationShader;
-	GLuint voxelTextureSize = 64; 
+	GLuint voxelTextureSize = 128; 
 	Texture3D voxelTexture;
 	const GLuint program = 0;
 

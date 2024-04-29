@@ -57,15 +57,19 @@ void Voxelization::Draw
     //glDisable(GL_DEPTH_TEST);
     //glDisable(GL_BLEND);
 
-    voxelTexture->BindAsImage(0, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-    glBindImageTexture(0, voxelTexture->textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+    voxelTexture->BindAsImage(0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    //glBindImageTexture(0, voxelTexture->textureID, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
 
 
     // Bind the voxelization shader and pass necessary uniforms
-    glm::mat4 modelMatrix = glm::mat4(0.00800000037997961);
+    glm::vec3 position = { 0,0,0 }, scale = { 1,1,1 }, rotation = { 0,0,0 };
+    glm::mat4 transform = glm::translate(position) * glm::mat4_cast(glm::quat(rotation)) * glm::scale(scale);
+    glm::mat4 modelMatrix = glm::mat4(1.0);
+
+    glm::mat4 model = glm::translate(modelMatrix, camera.Position);
     //glm::mat4 modelMatrix = glm::mat4(1.0f);
-    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), 64, 64, 64);
 
     // Take care of the camera Matrix
@@ -81,6 +85,8 @@ void Voxelization::Draw
     // Draw the mesh as points or whatever form is required for voxelization
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear before drawing the quad
+
     // Restore OpenGL settings
     //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     //glEnable(GL_BLEND);
@@ -93,3 +99,73 @@ void Voxelization::Draw
     }
 }
 
+void Voxelization::visualizeVoxels(
+    Shader& voxelShader, // This is the shader that will handle the voxelization
+    Texture3D* voxelTexture, // ID of the 3D texture to store voxel data
+    Camera& camera
+)
+{
+    voxelShader.Activate();
+
+    VAO.Bind();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Settings.
+
+    //glViewport(0, 0, voxelTextureSize, voxelTextureSize);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+
+    voxelTexture->BindAsImage(0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(0, voxelTexture->textureID, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    // Bind the voxelization shader and pass necessary uniforms
+    glm::mat4 modelMatrix = glm::mat4(0.00800000037997961);
+    //glm::mat4 modelMatrix = glm::mat4(1.0f);
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), 64, 64, 64);
+
+    // Take care of the camera Matrix
+    glUniform3f(glGetUniformLocation(voxelShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+    camera.Matrix(voxelShader, "camMatrix");
+
+    glm::vec3 cameraPos = camera.Position;
+    //std::cout << "Camera Position: " << cameraPos.x << " " << cameraPos.y << " " << cameraPos.z << std::endl;
+    glm::vec3 cameraTarget = camera.Position + camera.Orientation;
+    glm::vec3 upVector = camera.Up;
+
+    glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, upVector);
+
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)1920 / (float)1080, 0.1f, 100.0f);
+
+    glm::mat4 viewProj = projection * view;
+
+    glm::mat4 invViewProj = glm::inverse(viewProj);
+
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "invViewProj"), 1, GL_FALSE, glm::value_ptr(invViewProj));
+
+    // Ensure no textures interfere with the process
+    //glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Setup the viewport to match the grid size if needed
+    //glViewport(0, 0, 64, 64);
+
+    // Draw the mesh as points or whatever form is required for voxelization
+    //glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+    // Restore OpenGL settings
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
+    GLenum gl_error = glGetError();
+    if (gl_error != GL_NO_ERROR) {
+        std::cout << "OpenGL Error: " << gl_error << std::endl;
+    }
+}

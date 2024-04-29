@@ -25,9 +25,8 @@ public:
 	void Clear(GLfloat clearColor[4]);
 
 	void BindAsImage(unsigned int unit, unsigned int level, bool layered, unsigned int layer, GLenum access, GLenum format);
-
+	int width, height, depth;
 
 private:
-	int width, height, depth;
 	std::vector<GLfloat> clearData;
 };

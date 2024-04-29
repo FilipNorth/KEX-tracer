@@ -40,12 +40,25 @@ void Model::DrawVoxels(Shader& shader, Camera& camera)
 	}
 }
 
+void Model::VisualizeVoxels(Shader& shader, Camera& camera)
+{
+	unsigned int j = 0;
+	// Go over all meshes and draw each one
+	for (unsigned int i = 0; i < voxels.size(); i++)
+	{
+		// Safety check to prevent out-of-bounds access
+		//std::cout << meshes[i].textures[0].ID << "\n";
+		voxels[i].Voxelization::visualizeVoxels(shader, voxel_texture_, camera);
+	}
+}	
+
 void Model::loadMesh(unsigned int indMesh) {
 	const json& mesh = JSON["meshes"][indMesh];
 	const json& primitives = mesh["primitives"];
 
 	std::vector<std::vector<Texture>> textures = getTextures();
 
+	int voxelSize = 128;
 	std::vector<GLfloat> voxelTextureData(64 * 64 * 64 * 4, 0.0f);
 	voxel_texture_ = new Texture3D(voxelTextureData, 64, 64, 64, true);
 
