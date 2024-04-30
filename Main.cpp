@@ -158,7 +158,7 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	// Creates camera object
-	Camera camera(width, height, glm::vec3(30.0f, 45.0f, 12.0f));
+	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 
 	// Load in a model
 	Model model("Models/Sponza-glTF/Sponza.gltf", voxelTextureSize);

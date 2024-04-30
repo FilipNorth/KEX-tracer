@@ -161,6 +161,7 @@ void Voxelization::visualizeVoxels(
 
     // Take care of the camera Matrix
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
+
     camera.Matrix(voxelShader, "camMatrix");
 
     glm::vec3 cameraPos = camera.Position;
@@ -176,7 +177,13 @@ void Voxelization::visualizeVoxels(
 
     glm::mat4 invViewProj = glm::inverse(viewProj);
 
+
     glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "invViewProj"), 1, GL_FALSE, glm::value_ptr(invViewProj));
+
+    glUniform3f(glGetUniformLocation(voxelShader.ID, "camera_pos"), cameraPos.x, cameraPos.y, cameraPos.z);
+    glUniform3f(glGetUniformLocation(voxelShader.ID, "camera_dir"), cameraTarget.x, cameraTarget.y, cameraTarget.z);
+    glUniform3f(glGetUniformLocation(voxelShader.ID, "camera_up"), upVector.x, upVector.y, upVector.z);
+    glUniform2f(glGetUniformLocation(voxelShader.ID, "resolution"), 1920, 1080);
 
     // Ensure no textures interfere with the process
     //glBindTexture(GL_TEXTURE_2D, 0);

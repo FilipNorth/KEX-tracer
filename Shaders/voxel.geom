@@ -1,79 +1,57 @@
 #version 460 core
 
-layout(triangles) in;
-layout(triangle_strip, max_vertices = 3) out;
+#define INV_STEP_LENGTH (1.0f/STEP_LENGTH)
+#define STEP_LENGTH 0.005f
 
-out vec3 Normal;
-out vec3 color;
-out vec2 texCoord;
-out vec3 crntPos;
+layout(binding = 0, rgba8) uniform image3D voxelTexture;
+uniform vec3 camPos;
+uniform int state = 0;
+uniform mat4 invViewProj;
 
-in DATA{
-    vec3 Normal;
-    vec3 color;
-    vec2 texCoord;
-    mat4 projection;
-    vec3 crntPos;
-} data_in[];
+uniform sampler2D diffuse0;
+uniform sampler2D specular0;
+uniform sampler2D normalMap0;
+uniform sampler2D metallicRoughnessMap0;
 
-// Default main function
-void main()
-{
-  vec3 p1 = gl_in[0].gl_Position.xyz;
-  vec3 p2 = gl_in[1].gl_Position.xyz;
-  vec3 p3 = gl_in[2].gl_Position.xyz;
+in vec2 textureCoordinateFrag;
+in vec3 PositionFrag;
+out vec4 FragColor;
 
-  vec3 tempNormal = abs( cross( p2-p1, p3-p1 ) );
+vec3 getRayDirection(vec2 screenCoords, mat4 invViewProjMatrix) {
+    vec4 clipCoords = vec4(screenCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 viewCoords = invViewProjMatrix * clipCoords;
+    return normalize(viewCoords.xyz / viewCoords.w);
+}
 
-  for(int i = 0; i < 3; i++){
+void main() {
+    vec3 rayDir = getRayDirection(textureCoordinateFrag, invViewProj);
+    vec3 rayOrigin = camPos;
 
-    crntPos = data_in[i].crntPos;
-    Normal = data_in[i].Normal;
-    color = data_in[i].color;
-    texCoord = data_in[i].texCoord;
+    int textureSize = imageSize(voxelTexture).x;  // Assuming the texture is cubic
+    float stepSize = 0.5 * (64.0 / float(textureSize));  // Adjust step size based on texture size
+    float maxDistance = float(textureSize);  // Assume maxDistance correlates to texture size
 
-    vec3 p = ( p1 + ( gl_in[i].gl_Position.xyz - p1 ) );
-    if( tempNormal.x > tempNormal.y && tempNormal.x > tempNormal.z ){
-      gl_Position = vec4( p.yz, 0, 1 );
-    } else if (tempNormal.y > tempNormal.z){
-      gl_Position = vec4( p.xz, 0, 1 );
-    } else {
-      gl_Position = vec4( p.xy, 0, 1 );
+    vec4 accumulatedColor = vec4(0.0);
+    float accumulatedAlpha = 0.0;
+
+    for (float dist = 0.0; dist < maxDistance; dist += stepSize) {
+        vec3 currentPos = rayOrigin + dist * rayDir;
+        ivec3 voxelCoord = ivec3(currentPos * (float(textureSize) / maxDistance));  // Scale position to voxel grid
+
+        if (any(lessThan(voxelCoord, ivec3(0))) || any(greaterThanEqual(voxelCoord, ivec3(textureSize)))) {
+            continue;
+        }
+
+        vec4 voxelData = imageLoad(voxelTexture, voxelCoord);
+        voxelData.rgb *= voxelData.a;
+
+        accumulatedColor += (1.0 - accumulatedAlpha) * voxelData;
+        accumulatedAlpha += (1.0 - accumulatedAlpha) * voxelData.a;
+
+        if (accumulatedAlpha >= 0.95) {
+            break;
+        }
     }
-    EmitVertex();
-  }
-  EndPrimitive();
+
+    FragColor = accumulatedColor;
 }
-
-
-// "Explosion" main function
-/* void main()
-{
-   vec3 vector0 = vec3(gl_in[0].gl_Position - gl_in[1].gl_Position);
-   vec3 vector1 = vec3(gl_in[2].gl_Position - gl_in[1].gl_Position);
-   vec4 surfaceNormal = vec4(normalize(cross(vector0, vector1)), 0.0f);
-
-   gl_Position = data_in[0].projection * (gl_in[0].gl_Position + surfaceNormal);
-   Normal = data_in[0].Normal;
-   color = data_in[0].color;
-   texCoord = data_in[0].texCoord;
-   crntPos = data_in[0].crntPos;
-   EmitVertex();
-
-   gl_Position = data_in[1].projection * (gl_in[1].gl_Position + surfaceNormal);
-   Normal = data_in[1].Normal;
-   color = data_in[1].color;
-   texCoord = data_in[1].texCoord;
-   crntPos = data_in[1].crntPos;
-   EmitVertex();
-
-   gl_Position = data_in[2].projection * (gl_in[2].gl_Position + surfaceNormal);
-   Normal = data_in[2].Normal;
-   color = data_in[2].color;
-   texCoord = data_in[2].texCoord;
-   crntPos = data_in[2].crntPos;
-   EmitVertex();
-
-   EndPrimitive();
-}
- */
