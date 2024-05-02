@@ -23,7 +23,7 @@ Texture3D::Texture3D(const std::vector<GLfloat>& textureBuffer, const int _width
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	// Upload texture buffer.
-	const int levels = 7;
+	const int levels = 5;
 	glTexStorage3D(GL_TEXTURE_3D, levels, GL_RGBA8, width, height, depth);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, width, height, depth, 0, GL_RGBA, GL_FLOAT, &textureBuffer[0]);
 	if (generateMipmaps) glGenerateMipmap(GL_TEXTURE_3D);

@@ -2,12 +2,11 @@
 
 Voxelization::Voxelization(std::vector <Vertex>& vertices,
     std::vector <GLuint>& indices,
-    std::vector <Texture>& textures, Texture3D* voxelTexture)
+    std::vector <Texture>& textures)
 {
     Voxelization::vertices = vertices;
     Voxelization::indices = indices;
     Voxelization::textures = textures;
-    Voxelization::voxelTexture = *voxelTexture;
 
     VAO.Bind();
     // Generates Vertex Buffer Object and links it to vertices
@@ -49,14 +48,6 @@ void Voxelization::Draw
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // Settings.
-
-    //glViewport(0, 0, voxelTextureSize, voxelTextureSize);
-    //glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    //glDisable(GL_CULL_FACE);
-    //glDisable(GL_DEPTH_TEST);
-    //glDisable(GL_BLEND);
 
     voxelTexture->BindAsImage(0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     //glBindImageTexture(0, voxelTexture->textureID, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
@@ -100,22 +91,11 @@ void Voxelization::Draw
     glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "rotation"), 1, GL_FALSE, glm::value_ptr(rot));
     glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "scale"), 1, GL_FALSE, glm::value_ptr(sca));
 
-    // Ensure no textures interfere with the process
-    //glBindTexture(GL_TEXTURE_2D, 0);
-
-    // Setup the viewport to match the grid size if needed
-    //glViewport(0, 0, 64, 64);
 
     // Draw the mesh as points or whatever form is required for voxelization
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear before drawing the quad
-
-    // Restore OpenGL settings
-    //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    //glEnable(GL_BLEND);
-    //glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
 
     GLenum gl_error = glGetError();
     if (gl_error != GL_NO_ERROR) {
@@ -131,7 +111,7 @@ void Voxelization::visualizeVoxels(
 {
     voxelShader.Activate();
 
-    VAO.Bind();
+    //VAO.Bind();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

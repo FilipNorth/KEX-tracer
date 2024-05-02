@@ -2,6 +2,7 @@
 
 #include <json/json.h>
 #include "Mesh.h"
+#include "Voxel_Cone_Tracing.h"
 
 using json = nlohmann::json;
 
@@ -30,6 +31,7 @@ private:
 	std::vector<glm::vec3> scalesMeshes;
 	std::vector<glm::mat4> matricesMeshes;
 	Texture3D * voxel_texture_ = nullptr;
+	Voxel_Cone_Tracing * voxel_cone_tracing_ = nullptr;
 
 	
 

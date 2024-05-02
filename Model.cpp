@@ -2,7 +2,7 @@
 
 Model::Model(const char* file, int voxelTextureSize)
 {
-	std::vector<GLfloat> voxelTextureData(voxelTextureSize * voxelTextureSize * voxelTextureSize * 4, 0.0f);
+	std::vector<GLfloat> voxelTextureData(voxelTextureSize * voxelTextureSize * voxelTextureSize, 0.0f);
 	voxel_texture_ = new Texture3D(voxelTextureData, voxelTextureSize, voxelTextureSize, voxelTextureSize, true);
 	// Make a JSON object
 	std::string text = get_file_contents(file);
@@ -45,12 +45,13 @@ void Model::VisualizeVoxels(Shader& shader, Camera& camera)
 {
 	unsigned int j = 0;
 	// Go over all meshes and draw each one
-	for (unsigned int i = 0; i < voxels.size(); i++)
-	{
+	//for (unsigned int i = 0; i < voxels.size(); i++)
+	//{
 		// Safety check to prevent out-of-bounds access
 		//std::cout << meshes[i].textures[0].ID << "\n";
-		voxels[i].Voxelization::visualizeVoxels(shader, voxel_texture_, camera);
-	}
+		//voxels[0].Voxelization::visualizeVoxels(shader, voxel_texture_, camera);
+		voxel_cone_tracing_->visualizeVoxels(shader, voxel_texture_, camera);
+	//}
 }	
 
 void Model::loadMesh(unsigned int indMesh) {
@@ -85,9 +86,9 @@ void Model::loadMesh(unsigned int indMesh) {
 		std::vector<GLuint> indices = indAccInd > 0 ? getIndices(JSON["accessors"][indAccInd]) : std::vector<GLuint>();
 
 		// Combine the vertices, indices, and textures into a mesh and add to the model
-		meshes.push_back(Mesh(vertices, indices, textures[materialInd]));
+		//meshes.push_back(Mesh(vertices, indices, textures[materialInd]));
 
-		voxels.push_back(Voxelization(vertices, indices, textures[materialInd], voxel_texture_));
+		voxels.push_back(Voxelization(vertices, indices, textures[materialInd]));
 	}
 
 }

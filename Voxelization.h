@@ -18,7 +18,7 @@ public:
 
 	Voxelization(std::vector <Vertex>& vertices,
 		std::vector <GLuint>& indices,
-		std::vector <Texture>& textures, Texture3D *voxelTexture);
+		std::vector <Texture>& textures);
 
 
 
@@ -38,7 +38,6 @@ public:
 private:
 	Shader * voxelizationShader;
 	GLuint voxelTextureSize = 128; 
-	Texture3D voxelTexture;
 	const GLuint program = 0;
 
 

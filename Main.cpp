@@ -76,7 +76,7 @@ int main()
 
 	//Load GLAD so it configures OpenGL
 	gladLoadGL();
-	int voxelTextureSize = 128;
+	int voxelTextureSize = 512;
 	// Specify the viewport of OpenGL in the Window
 	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
 	glViewport(0, 0, voxelTextureSize, voxelTextureSize);
@@ -162,6 +162,7 @@ int main()
 
 	// Load in a model
 	Model model("Models/Sponza-glTF/Sponza.gltf", voxelTextureSize);
+	model.DrawVoxels(testingShaders, camera);
 	//("Models/Stanford_Bunny/scene.gltf");
 
 	// Original code from the tutorial
@@ -181,7 +182,6 @@ int main()
 		// Updates and exports the camera matrix to the Vertex Shader
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
 		// Draw a model
-		model.DrawVoxels(testingShaders, camera);
 		model.VisualizeVoxels(voxelShader, camera);
 		//model.Draw(defaultShader, camera);
 		//model.Draw(normalShader, camera);
