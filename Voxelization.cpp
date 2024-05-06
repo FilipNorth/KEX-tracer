@@ -36,7 +36,10 @@ void Voxelization::Draw
     voxelShader.Activate();
 
     VAO.Bind();
-
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 
     for (unsigned int i = 0; i < textures.size(); i++)
     {
@@ -95,6 +98,11 @@ void Voxelization::Draw
     // Draw the mesh as points or whatever form is required for voxelization
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear before drawing the quad
 
     GLenum gl_error = glGetError();
@@ -141,7 +149,8 @@ void Voxelization::visualizeVoxels(
 
     // Take care of the camera Matrix
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
-
+    std::cout << "camera position = " << camera.Position.x << " : " << camera.Position.y << " : " << camera.Position.z << "\n";
+ 
     camera.Matrix(voxelShader, "camMatrix");
 
     glm::vec3 cameraPos = camera.Position;

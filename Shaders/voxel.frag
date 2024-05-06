@@ -9,10 +9,6 @@ uniform int state = 0;
 uniform mat4 invViewProj;
 uniform float worldSize = 20.0;  // Define the size of the world volume covered by the voxel grid
 
-uniform sampler2D diffuse0;
-uniform sampler2D specular0;
-uniform sampler2D normalMap0;
-uniform sampler2D metallicRoughnessMap0;
 
 in vec2 textureCoordinateFrag;
 out vec4 FragColor;

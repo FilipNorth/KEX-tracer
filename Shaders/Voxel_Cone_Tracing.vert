@@ -1,24 +1,20 @@
 #version 460 core
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec3 aNormal;
+
+uniform mat4 V;
+
+layout (location = 0) in vec3 Position;
+layout (location = 1) in vec3 Normal;
 layout(location = 2) in vec3 aColor;
-layout(location = 3) in vec2 aTexCoords;
+layout (location = 3) in vec2 texcoord;
 
-uniform mat4 model;
-uniform mat4 camMatrix;
-uniform mat4 translation;
-uniform mat4 rotation;
-uniform mat4 scale;
+out vec2 textureCoordinateFrag;
+out vec3 PositionFrag;
 
+// Scales and bias a given vector (i.e. from [-1, 1] to [0, 1]).
+vec2 scaleAndBias(vec2 p) { return 0.5f * p + vec2(0.5f); }
 
-out vec3 worldPositionGeom;
-out vec3 normalFrag;
-out vec2 texCoords;
-
-void main() {
-    vec3 normalized = normalize(aPos);
-    texCoords = aTexCoords;
-    worldPositionGeom = vec3( model * vec4(aPos, 1));
-    normalFrag = aNormal;
-    gl_Position = vec4(worldPositionGeom, 1.0);
+void main(){
+	textureCoordinateFrag = scaleAndBias(Position.xy);
+	PositionFrag = Position;
+	gl_Position = vec4(Position, 1);
 }

@@ -85,6 +85,8 @@ int main()
 	Shader defaultShader("Shaders/default.vert", "Shaders/default.geom", "Shaders/default.frag");
 	Shader voxelShader("Shaders/voxel.vert", "Shaders/voxel.frag");
 	Shader normalShader("Shaders/default.vert", "Shaders/normal.geom", "Shaders/normal.frag");
+	Shader voxelTraceShader("Shaders/Voxel_Cone_Tracing.vert", "Shaders/Voxel_Cone_Tracing.frag");
+
 
 	Shader testingShaders("Shaders/voxelTesting.vert", "Shaders/voxelTesting.geom", "Shaders/voxelTesting.frag");
 	GLenum gl_error = glGetError();
@@ -141,6 +143,11 @@ int main()
 	glUniform3f(glGetUniformLocation(testingShaders.ID, "lightColor2"), voxelLightColor.x, voxelLightColor.y, voxelLightColor.z);
 	glUniform3f(glGetUniformLocation(testingShaders.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 
+	voxelTraceShader.Activate();
+	glUniform4f(glGetUniformLocation(voxelTraceShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+	glUniform3f(glGetUniformLocation(voxelTraceShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+
+
 	gl_error = glGetError();
 	if (gl_error != GL_NO_ERROR) {
 		std::cout << "OpenGL Error: " << gl_error << std::endl;
@@ -177,12 +184,20 @@ int main()
 		// Clean the back buffer and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+		glm::vec3 preUpdateCamera = camera.Position;
 		// Handles camera inputs
 		camera.Inputs(window);
 		// Updates and exports the camera matrix to the Vertex Shader
 		camera.updateMatrix(45.0f, 0.1f, 100.0f);
+		glm::vec3 afterUpdateCamera = camera.Position;
+		glm::vec3 movementCamera = afterUpdateCamera - preUpdateCamera;
+		//std::cout << movementCamera.x << " : " << movementCamera.y << " : " << movementCamera.z << "\n";
 		// Draw a model
-		model.VisualizeVoxels(voxelShader, camera);
+		//model.VisualizeVoxels(voxelShader, camera);
+		// 
+		// 
+		model.VisualizeVoxels(voxelTraceShader, camera);
 		//model.Draw(defaultShader, camera);
 		//model.Draw(normalShader, camera);
 
@@ -195,7 +210,8 @@ int main()
 		// Draw primitives, number of indices, datatype of indices, index of indices
 		//glDrawElements(GL_TRIANGLES, sizeof(lightIndices) / sizeof(int), GL_UNSIGNED_INT, 0);
 
-		voxelShader.Activate();
+		//voxelShader.Activate();
+		voxelTraceShader.Activate();
 
 		quadVAO.Bind();
 

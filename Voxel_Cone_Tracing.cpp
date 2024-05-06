@@ -44,7 +44,6 @@ void Voxel_Cone_Tracing::visualizeVoxels(
 
     // Take care of the camera Matrix
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
-
     camera.Matrix(voxelShader, "camMatrix");
 
     glm::vec3 cameraPos = camera.Position;
@@ -60,8 +59,10 @@ void Voxel_Cone_Tracing::visualizeVoxels(
 
     glm::mat4 invViewProj = glm::inverse(viewProj);
 
+    glm::vec3 viewDirection = glm::normalize(cameraTarget - cameraPos);
 
     glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "invViewProj"), 1, GL_FALSE, glm::value_ptr(invViewProj));
+    glUniform3f(glGetUniformLocation(voxelShader.ID, "viewDirection"), viewDirection.x, viewDirection.y, viewDirection.z);
 
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camera_pos"), cameraPos.x, cameraPos.y, cameraPos.z);
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camera_dir"), cameraTarget.x, cameraTarget.y, cameraTarget.z);
