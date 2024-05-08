@@ -86,6 +86,7 @@ int main()
 	Shader voxelShader("Shaders/voxel.vert", "Shaders/voxel.frag");
 	Shader normalShader("Shaders/default.vert", "Shaders/normal.geom", "Shaders/normal.frag");
 	Shader voxelTraceShader("Shaders/Voxel_Cone_Tracing.vert", "Shaders/Voxel_Cone_Tracing.frag");
+	Shader thiefShader("Shaders/Thief.vert", "Shaders/Thief.frag");
 
 
 	Shader testingShaders("Shaders/voxelTesting.vert", "Shaders/voxelTesting.geom", "Shaders/voxelTesting.frag");
@@ -147,6 +148,9 @@ int main()
 	glUniform4f(glGetUniformLocation(voxelTraceShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
 	glUniform3f(glGetUniformLocation(voxelTraceShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 
+	thiefShader.Activate();
+	glUniform4f(glGetUniformLocation(thiefShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+	glUniform3f(glGetUniformLocation(thiefShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
 
 	gl_error = glGetError();
 	if (gl_error != GL_NO_ERROR) {
@@ -165,24 +169,26 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	// Creates camera object
-	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
+	Camera camera(width, height, glm::vec3(0.0f, 4.0f, 0.0f));
 
 	// Load in a model
 	Model model("Models/Sponza-glTF/Sponza.gltf", voxelTextureSize);
-	model.DrawVoxels(testingShaders, camera);
 	//("Models/Stanford_Bunny/scene.gltf");
+
+	model.DrawVoxels(testingShaders, camera);
 
 	// Original code from the tutorial
 	// Model model("models/bunny/scene.gltf");
-	//model.DrawVoxels(voxelShader, camera);
+	//model.DrawVoxels(voxelShader, camera);s
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
-		glViewport(0, 0, voxelTextureSize, voxelTextureSize);
+		//glViewport(0, 0, voxelTextureSize, voxelTextureSize);
 		// Specify the color of the background
 		glClearColor(0.5f, 0.6f, 0.8f, 1.0f);
 		// Clean the back buffer and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glClear(GL_COLOR_BUFFER_BIT);
 
 
 		glm::vec3 preUpdateCamera = camera.Position;
@@ -200,6 +206,7 @@ int main()
 		model.VisualizeVoxels(voxelTraceShader, camera);
 		//model.Draw(defaultShader, camera);
 		//model.Draw(normalShader, camera);
+		//model.DrawVoxels(thiefShader, camera);
 
 		// Tells OpenGL which Shader Program we want to use
 		//lightShader.Activate();

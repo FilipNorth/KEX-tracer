@@ -32,9 +32,8 @@ void Voxel_Cone_Tracing::visualizeVoxels(
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glm::vec3 proj = glm::vec3(2048, 2048, 2048);
-    glm::mat4 voxel_projection_ = glm::ortho(-proj.x, proj.x,
-        -proj.y, proj.y,
-        proj.z, -proj.z);
+    glm::mat4 voxel_projection_ = glm::ortho(-proj.x, proj.x, -proj.y, proj.y, -proj.z, proj.z);
+
 
     // Bind the voxelization shader and pass necessary uniforms
     glm::mat4 modelMatrix = glm::mat4(0.00800000037997961);
@@ -61,6 +60,7 @@ void Voxel_Cone_Tracing::visualizeVoxels(
 
     glm::vec3 viewDirection = glm::normalize(cameraTarget - cameraPos);
 
+    glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "ViewProj"), 1, GL_FALSE, glm::value_ptr(viewProj));
     glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "invViewProj"), 1, GL_FALSE, glm::value_ptr(invViewProj));
     glUniform3f(glGetUniformLocation(voxelShader.ID, "viewDirection"), viewDirection.x, viewDirection.y, viewDirection.z);
 

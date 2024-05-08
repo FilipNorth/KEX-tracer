@@ -1,6 +1,7 @@
 #version 460 core
 
 uniform mat4 V;
+uniform mat4 viewProj;
 
 layout (location = 0) in vec3 Position;
 layout (location = 1) in vec3 Normal;

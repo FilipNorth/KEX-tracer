@@ -36,10 +36,6 @@ void Voxelization::Draw
     voxelShader.Activate();
 
     VAO.Bind();
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
 
     for (unsigned int i = 0; i < textures.size(); i++)
     {
@@ -98,12 +94,8 @@ void Voxelization::Draw
     // Draw the mesh as points or whatever form is required for voxelization
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear before drawing the quad
+    glClear(GL_COLOR_BUFFER_BIT); // Clear before drawing the quad
 
     GLenum gl_error = glGetError();
     if (gl_error != GL_NO_ERROR) {
@@ -119,17 +111,22 @@ void Voxelization::visualizeVoxels(
 {
     voxelShader.Activate();
 
-    //VAO.Bind();
+    VAO.Bind();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Settings.
+    for (unsigned int i = 0; i < textures.size(); i++)
+    {
+        std::string num;
+        std::string type = textures[i].type;
+
+        textures[i].texUnit(voxelShader, (type + "0").c_str(), textures[i].unit);
+        textures[i].Bind();
+    }
 
     //glViewport(0, 0, voxelTextureSize, voxelTextureSize);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
+
 
     voxelTexture->BindAsImage(0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     glBindImageTexture(0, voxelTexture->textureID, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
@@ -181,13 +178,10 @@ void Voxelization::visualizeVoxels(
     //glViewport(0, 0, 64, 64);
 
     // Draw the mesh as points or whatever form is required for voxelization
-    //glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
     // Restore OpenGL settings
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+
 
     GLenum gl_error = glGetError();
     if (gl_error != GL_NO_ERROR) {
