@@ -10,6 +10,7 @@ public:
 	GLuint ID;
 	const char* type;
 	GLuint unit;
+	int widthImg, heightImg, numColCh;
 
 	Texture(const char* image, const char* texType, GLuint slot);
 
@@ -21,4 +22,16 @@ public:
 	void Unbind();
 	// Deletes a texture
 	void Delete();
+
+
+};
+
+struct Texture2D {
+	GLuint textureID;
+	int width, height, componentsPerPixel;
+};
+
+struct Texture3D {
+	GLuint textureID;
+	int size, componentsPerPixel;
 };

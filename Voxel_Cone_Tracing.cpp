@@ -12,6 +12,7 @@ void Voxel_Cone_Tracing::visualizeVoxels(
     Camera& camera
 )
 {
+    /*
     voxelShader.Activate();
 
     //VAO.Bind();
@@ -88,4 +89,5 @@ void Voxel_Cone_Tracing::visualizeVoxels(
     if (gl_error != GL_NO_ERROR) {
         std::cout << "OpenGL Error: " << gl_error << std::endl;
     }
+    */
 }

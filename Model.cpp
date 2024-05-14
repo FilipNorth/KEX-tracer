@@ -1,9 +1,9 @@
 #include "Model.h"
 
-Model::Model(const char* file, int voxelTextureSize)
+Model::Model(const char* file)
 {
-	std::vector<GLfloat> voxelTextureData(voxelTextureSize * voxelTextureSize * voxelTextureSize, 0.0f);
-	voxel_texture_ = new Texture3D(voxelTextureData, voxelTextureSize, voxelTextureSize, voxelTextureSize, true);
+	//std::vector<GLfloat> voxelTextureData(voxelTextureSize * voxelTextureSize * voxelTextureSize, 0.0f);
+	//voxel_texture_ = new Texture3D(voxelTextureData, voxelTextureSize, voxelTextureSize, voxelTextureSize, true);
 	// Make a JSON object
 	std::string text = get_file_contents(file);
 	JSON = json::parse(text);
@@ -16,7 +16,7 @@ Model::Model(const char* file, int voxelTextureSize)
 	traverseNode(0);
 }
 
-void Model::Draw(Shader& shader, Camera& camera)
+void Model::Draw(Shader& shader, Camera& camera, glm::mat4& depthViewProjectionMatrix_)
 {	
 	unsigned int j = 0;
 	// Go over all meshes and draw each one
@@ -24,20 +24,28 @@ void Model::Draw(Shader& shader, Camera& camera)
 	{
 		// Safety check to prevent out-of-bounds access
 		//std::cout << meshes[i].textures[0].ID << "\n";
-		meshes[i].Mesh::Draw(shader, camera, matricesMeshes[0]);
-		
+		meshes[i].Mesh::standardDraw(shader, camera, depthViewProjectionMatrix_);
 	}
 }
 
-void Model::DrawVoxels(Shader& shader, Camera& camera)
+void Model::CreateDepthTexture(Shader& shader, Camera& camera, glm::mat4 &depthViewProjectionMatrix_) {
+
+	for (int i = 0; i < meshes.size(); i++)
+	{
+		meshes[i].Mesh::createShadowMap(shader, camera, depthViewProjectionMatrix_);
+	}
+
+}
+
+void Model::DrawVoxels(Shader& shader, Camera& camera, glm::mat4& depthViewProjectionMatrix_)
 {
 	unsigned int j = 0;
 	// Go over all meshes and draw each one
-	for (unsigned int i = 0; i < voxels.size(); i++)
+	for (unsigned int i = 0; i < meshes.size(); i++)
 	{
 		// Safety check to prevent out-of-bounds access
 		//std::cout << meshes[i].textures[0].ID << "\n";
-		voxels[i].Voxelization::Draw(shader, voxel_texture_, camera, matricesMeshes[0]);
+		meshes[i].Mesh::createVoxels(shader, camera, depthViewProjectionMatrix_);
 	}
 }
 
@@ -86,7 +94,7 @@ void Model::loadMesh(unsigned int indMesh) {
 		std::vector<GLuint> indices = indAccInd > 0 ? getIndices(JSON["accessors"][indAccInd]) : std::vector<GLuint>();
 
 		// Combine the vertices, indices, and textures into a mesh and add to the model
-		//meshes.push_back(Mesh(vertices, indices, textures[materialInd]));
+		meshes.push_back(Mesh(vertices, indices, textures[materialInd], Globalscale));
 
 		voxels.push_back(Voxelization(vertices, indices, textures[materialInd]));
 	}
@@ -132,6 +140,7 @@ void Model::traverseNode(unsigned int nextNode, glm::mat4 matrix)
 			scaleValues[i] = (node["scale"][i]);
 		scale = glm::make_vec3(scaleValues);
 	}
+	//Globalscale = scale.x;
 	// Get matrix if it exists
 	glm::mat4 matNode = glm::mat4(1.0f);
 	if (node.find("matrix") != node.end())
@@ -275,29 +284,30 @@ std::vector<std::vector<Texture>> Model::getTextures() {
 		if (material.contains("pbrMetallicRoughness")) {
 			if (material["pbrMetallicRoughness"].contains("baseColorTexture")) {
 				int texIndex = material["pbrMetallicRoughness"]["baseColorTexture"]["index"];
-				loadTextureByIndex(texIndex, "diffuse", fileDirectory, textures[i]);
+				loadTextureByIndex(texIndex, "baseColorTexture", fileDirectory, textures[i], 0);
 			}
 			if (material["pbrMetallicRoughness"].contains("metallicRoughnessTexture")) {
 				int texIndex = material["pbrMetallicRoughness"]["metallicRoughnessTexture"]["index"];
-				loadTextureByIndex(texIndex, "metallicRoughness", fileDirectory, textures[i]);
+				//loadTextureByIndex(texIndex, "metallicRoughness", fileDirectory, textures[i]);
+				loadTextureByIndex(texIndex, "metallicRoughnessTexture", fileDirectory, textures[i], 1);
 			}
 		}
 		if (material.contains("normalTexture")) {
 			int texIndex = material["normalTexture"]["index"];
-			loadTextureByIndex(texIndex, "normal", fileDirectory, textures[i]);
+			loadTextureByIndex(texIndex, "normalMap", fileDirectory, textures[i], 2);
 		}
 	}
 
 	return textures;
 }
 
-void Model::loadTextureByIndex(int index, const char* type, const std::string& fileDirectory, std::vector<Texture>& textures) {
+void Model::loadTextureByIndex(int index, const char* type, const std::string& fileDirectory, std::vector<Texture>& textures, int slot) {
 	int imageIndex  = findImageIndexByTextureIndex(index);
 	std::string texPath = JSON["images"][imageIndex]["uri"];
 
 	auto it = std::find(loadedTexName.begin(), loadedTexName.end(), texPath);
 	if (it == loadedTexName.end()) {
-		Texture texture((fileDirectory + texPath).c_str(), type, loadedTex.size());
+		Texture texture((fileDirectory + texPath).c_str(), type, slot);
 		textures.push_back(texture);
 		loadedTex.push_back(texture);
 		loadedTexName.push_back(texPath);
@@ -324,10 +334,19 @@ std::vector<Vertex> Model::assembleVertices
 	std::vector<glm::vec3> normals,
 	std::vector<glm::vec2> texUVs
 )
-{
+{	
+
 	std::vector<Vertex> vertices;
 	for (int i = 0; i < positions.size(); i++)
-	{
+	{	
+		float temp = positions[i].x;
+		positions[i].x = positions[i].z;
+		positions[i].z = temp;
+
+		temp = normals[i].x;
+		normals[i].x = normals[i].z;
+		normals[i].z = temp;
+
 		vertices.push_back
 		(
 			Vertex

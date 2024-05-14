@@ -32,7 +32,7 @@ void Voxelization::Draw
     glm::mat4 modelMatrix
 )
 {
-
+    /*
     voxelShader.Activate();
 
     VAO.Bind();
@@ -101,6 +101,7 @@ void Voxelization::Draw
     if (gl_error != GL_NO_ERROR) {
         std::cout << "OpenGL Error: " << gl_error << std::endl;
     }
+    */
 }
 
 void Voxelization::visualizeVoxels(
@@ -109,6 +110,8 @@ void Voxelization::visualizeVoxels(
     Camera& camera
 )
 {
+
+    /*
     voxelShader.Activate();
 
     VAO.Bind();
@@ -142,8 +145,7 @@ void Voxelization::visualizeVoxels(
     glm::mat4 modelMatrix = glm::mat4(0.00800000037997961);
     //glm::mat4 modelMatrix = glm::mat4(1.0f);
     glUniformMatrix4fv(glGetUniformLocation(voxelShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(voxel_projection_));
-    glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), voxelTexture->width, voxelTexture->height, voxelTexture->depth);
-
+    glUniform3i(glGetUniformLocation(voxelShader.ID, "gridSize"), voxelTexture->size, voxelTexture->size, voxelTexture->size);
     // Take care of the camera Matrix
     glUniform3f(glGetUniformLocation(voxelShader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
     std::cout << "camera position = " << camera.Position.x << " : " << camera.Position.y << " : " << camera.Position.z << "\n";
@@ -187,4 +189,49 @@ void Voxelization::visualizeVoxels(
     if (gl_error != GL_NO_ERROR) {
         std::cout << "OpenGL Error: " << gl_error << std::endl;
     }
+    */
+}
+
+void Voxelization::createShadowMap() {
+
+    VAO.Bind();
+    glGenFramebuffers(1, &depthFramebuffer_);
+    glBindFramebuffer(GL_FRAMEBUFFER, depthFramebuffer_);
+
+    // Depth texture
+    depthTexture_.width = depthTexture_.height = 4096;
+
+    glm::mat4 viewMatrix = glm::lookAt(lightDirection_, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    glm::mat4 projectionMatrix = glm::ortho	<float>(-120, 120, -120, 120, -500, 500);
+    depthViewProjectionMatrix_ = projectionMatrix * viewMatrix;
+
+    glGenTextures(1, &depthTexture_.textureID);
+    glBindTexture(GL_TEXTURE_2D, depthTexture_.textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, depthTexture_.width, depthTexture_.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture_.textureID, 0);
+    // No color output
+    glDrawBuffer(GL_NONE);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "Error creating framebuffer" << std::endl;
+        //return false;
+    }
+    // Draw to depth frame buffer instead of screen
+    glBindFramebuffer(GL_FRAMEBUFFER, depthFramebuffer_);
+
+    glViewport(0, 0, depthTexture_.width, depthTexture_.height);
+
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+    glUseProgram(0);
+    glBindVertexArray(0);
 }

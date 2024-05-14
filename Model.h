@@ -10,13 +10,16 @@ class Model
 {
 public:
 	// Loads in a model from a file and stores tha information in 'data', 'JSON', and 'file'
-	Model(const char* file, int VoxelTextureSize);
+	Model(const char* file);
 
-	void Draw(Shader& shader, Camera& camera);
+	void CreateDepthTexture(Shader& shader, Camera& camera, glm::mat4 & depthViewProjectionMatrix_);
+	void Draw(Shader& shader, Camera& camera, glm::mat4& depthViewProjectionMatrix_);
 
-	void DrawVoxels(Shader& shader, Camera& camera);
+	void DrawVoxels(Shader& shader, Camera& camera, glm::mat4& depthViewProjectionMatrix_);
 
 	void VisualizeVoxels(Shader& shader, Camera& camera);
+
+	float Globalscale = 0.05f;
 private:
 	// Variables for easy access
 	const char* file;
@@ -66,6 +69,6 @@ private:
 	std::vector<glm::vec3> groupFloatsVec3(std::vector<float> floatVec);
 	std::vector<glm::vec4> groupFloatsVec4(std::vector<float> floatVec);
 
-	void loadTextureByIndex(int index, const char* type, const std::string& fileDirectory, std::vector<Texture>& textures);
+	void loadTextureByIndex(int index, const char* type, const std::string& fileDirectory, std::vector<Texture>& textures, int slot);
 	int findImageIndexByTextureIndex(int index);
 };

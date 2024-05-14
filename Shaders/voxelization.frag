@@ -10,12 +10,12 @@ in fData {
 } frag;
 
 uniform layout(RGBA8) image3D VoxelTexture;
-uniform sampler2D DiffuseTexture;
+uniform sampler2D diffuse;
 uniform sampler2DShadow ShadowMap;
 uniform int VoxelDimensions;
 
 void main() {
-    vec4 materialColor = texture(DiffuseTexture, frag.UV);
+    vec4 materialColor = texture(diffuse, frag.UV);
 
     // Do shadow map lookup here
     // TODO: Splat photons onto the voxels at a later stage using a separate shader
@@ -43,4 +43,5 @@ void main() {
 	// TODO: Atomic operations to get an averaged value, described in OpenGL insights about voxelization
 	// Required to avoid flickering when voxelizing every frame
     imageStore(VoxelTexture, texPos, vec4(materialColor.rgb * visibility, 1.0));
+
 }

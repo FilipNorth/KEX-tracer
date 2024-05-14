@@ -3,13 +3,19 @@
 #include"EBO.h"
 #include"Camera.h"
 #include"Texture.h"
-#include "Texture3D.h"
+//#include "Texture3D.h"
 #include "Scene.h"
 #include "Libraries/include/glm/glm.hpp"	
 
 class Voxelization
 {
 public:
+
+	struct Texture2D {
+		GLuint textureID;
+		int width, height, componentsPerPixel;
+	};
+
 	std::vector <Vertex> vertices;
 	std::vector <GLuint> indices;
 	std::vector <Texture> textures;
@@ -35,12 +41,17 @@ public:
 		Camera& camera
 	);
 
+	void createShadowMap();
+
 private:
 	Shader * voxelizationShader;
 	GLuint voxelTextureSize = 128; 
 	const GLuint program = 0;
-
-
+	GLuint depthFramebuffer_;
+	Texture2D depthTexture_;
+	GLuint shadowShader_;
+	glm::mat4 depthViewProjectionMatrix_;
+	glm::vec3 lightDirection_ = glm::vec3(-0.3, 0.9, -0.25);
 
 };
 

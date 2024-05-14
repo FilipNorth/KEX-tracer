@@ -25,7 +25,7 @@ const vec3 ConeVectors[5] = vec3[5](
 
 const float Weights[5] = float[5](0.28, 0.18, 0.18, 0.18, 0.18);
 const float Apertures[5] = float[5]( /* tan(45) */ 1.0, 1.0, 1.0, 1.0, 1.0 );
-
+const float shadowAngle = radians(30.0);
 
 vec3 getRayDirection(vec2 screenCoords, mat4 invViewProjMatrix) {
     vec4 clipCoords = vec4(screenCoords * 2.0 - 1.0, 1.0, 1.0);
@@ -175,8 +175,6 @@ vec3 createOrthogonalVectors(vec3 n) {
 vec4 rayMarching(vec3 rayOrigin, vec3 rayDir, float maxDistance, float normalizedStepSize, int textureSize, float worldSize, vec3 lightPos, vec4 lightColor, float lightRadius, int bounce) {
     vec4 accumulatedColor = vec4(0.0);
     float accumulatedAlpha = 0.0;
-    vec3 normalizedLightPos = normalize(lightPos);
-    vec3 voxelizedLightPos = vec3(normalizedLightPos * textureSize);
 
     
     float lightIntensity = 1.0;
@@ -204,7 +202,7 @@ vec4 rayMarching(vec3 rayOrigin, vec3 rayDir, float maxDistance, float normalize
             
             vec3 viewDir = normalize(camPos - currentPos); // Vector from point to camera
             // Cone tracing for soft shadows
-            float shadowAngle = radians(30.0);  // Wider cone for softer shadows
+                // Wider cone for softer shadows
             vec4 shadowResult = coneTrace(currentPos, normalize(lightPos - currentPos), shadowAngle, length(lightPos - currentPos), 10, textureSize);
             float shadowFactor = 1 - shadowResult.a;  // Determine shadow strength based
             vec3 tangent = createOrthogonalVectors(normal); // Declare tangent (and bitangent
@@ -250,19 +248,19 @@ void main() {
 
 
     int textureSize = imageSize(voxelTexture).x;  // Assuming the texture is cubic
-    float normalizedStepSize = (worldSize / float(textureSize)) * 0.1;  // Normalize the step size
+    float normalizedStepSize = (worldSize / float(textureSize)) * 0.1 ;  // Normalize the step size
     float maxDistance = worldSize;  // Max distance in normalized world coordinates
 
     vec4 accumulatedColor = vec4(0.0);
     float accumulatedAlpha = 0.0;
 
-    vec3 lightPos = vec3(0.0, 2.0, 2.0);
+    vec3 lightPos = vec3(0.0, 1.0, 1.0);
     float lightRadius = 0.1;
     vec3 normalizedLightPos = normalize(lightPos);
     vec4 lightColor = vec4(1.0);
 
     accumulatedColor = rayMarching(rayOrigin, rayDir, maxDistance, normalizedStepSize, textureSize, worldSize, lightPos, lightColor, lightRadius, 1);
-    
+
 
     FragColor = vec4(accumulatedColor.rgb, accumulatedColor.a);
 
