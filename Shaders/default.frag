@@ -176,9 +176,16 @@ vec3 calcBumpNormal() {
     // If tangentToWorld is the transformation matrix from tangent space to world space.
 }
 
+vec3 fresnelSchlick(float cosTheta, vec3 F0) {
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
 
 void main() {
     vec4 materialColor = texture(baseColorTexture, UV);
+    vec4 metallicRoughnessColor = texture(metallicRoughnessTexture, UV);
+    float roughness = metallicRoughnessColor.g;
+    float metallic = metallicRoughnessColor.b;
+    vec4 diffuseColor = materialColor;
     float alpha = materialColor.a;
 
     if(alpha < 0.5) {
@@ -199,13 +206,6 @@ void main() {
     {
         // Shadow map
         float visibility = texture(ShadowMap, vec3(Position_depth.x, Position_depth.y, (Position_depth.z - 0.0005)/Position_depth.w));
-
-        // float visibility = 1.0;
-        // for (int i=0;i<4;i++){
-        //     if (texture(ShadowMap, vec3(Position_depth.xy + (poissonDisk[i]/700.0 ), Position_depth.z)) <  Position_depth.z - 0.0005 ){
-        //         visibility-=0.2;
-        //     }
-        // }
         // Direct diffuse light
         float cosTheta = max(0, dot(N, L));
         vec3 directDiffuseLight = ShowDiffuse > 0.5 ? vec3(visibility * cosTheta) : vec3(0.0);
@@ -213,12 +213,12 @@ void main() {
         // Indirect diffuse light
 		float occlusion = 0.0;
         vec3 indirectDiffuseLight = indirectLight(occlusion).rgb;
-        indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 4.0 * indirectDiffuseLight : vec3(0.0);
+        indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 4.0 * indirectDiffuseLight * roughness : vec3(0.0);
 
         // Sum direct and indirect diffuse light and tweak a little bit
         occlusion = min(1.0,  0.5 * occlusion); // Make occlusion brighter
         //diffuseReflection = 2.0 * occlusion * (directDiffuseLight + indirectDiffuseLight * 0.7) * materialColor.rgb;
-        diffuseReflection = ( (2.0 * occlusion * indirectDiffuseLight)  +  (0.3*directDiffuseLight) ) * materialColor.rgb + 0.05 * materialColor.rgb ;
+        diffuseReflection = ( (2.0 * occlusion * indirectDiffuseLight)  +  (0.3*directDiffuseLight) ) * diffuseColor.rgb + 0.05 * diffuseColor.rgb ;
     }
     
     // Calculate specular light
@@ -232,7 +232,8 @@ void main() {
         // Maybe fix so that the cone doesnt trace below the plane defined by the surface normal.
         // For example so that the floor doesnt reflect itself when looking at it with a small angle
         float specularOcclusion;
-        vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
+        float angle = roughness;
+        vec4 tracedSpecular = coneTrace(reflectDir, angle, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
         specularReflection = ShowIndirectSpecular > 0.5 ? 0.2 *  tracedSpecular.rgb : vec3(0.0);
     }
 
