@@ -95,6 +95,13 @@ float coneWeights[6] = float[](0.25, 0.15, 0.15, 0.15, 0.15, 0.15);
 //                             );
 // float coneWeights[5] = float[](0.28, 0.18, 0.18, 0.18, 0.18);
 
+vec2 poissonDisk[4] = vec2[](
+  vec2( -0.94201624, -0.39906216 ),
+  vec2( 0.94558609, -0.76890725 ),
+  vec2( -0.094184101, -0.92938870 ),
+  vec2( 0.34495938, 0.29387760 )
+);
+
 mat3 tangentToWorld;
 
 vec4 sampleVoxels(vec3 worldPosition, float lod) {
@@ -178,7 +185,9 @@ void main() {
         discard;
     }
     
-    tangentToWorld = inverse(transpose(mat3(Tangent_world, Normal_world, Bitangent_world)));
+    //tangentToWorld = inverse(transpose(mat3(Tangent_world, Normal_world, Bitangent_world)));
+    tangentToWorld = mat3(Tangent_world, Bitangent_world, Normal_world); // Ensure proper orientation and handedness
+
 
     // Normal, light direction and eye direction in world coordinates
     vec3 N = calcBumpNormal();
@@ -189,8 +198,14 @@ void main() {
     vec3 diffuseReflection;
     {
         // Shadow map
-        float visibility = texture(ShadowMap, vec3(Position_depth.xy, (Position_depth.z - 0.0005)/Position_depth.w));
+        float visibility = texture(ShadowMap, vec3(Position_depth.x, Position_depth.y, (Position_depth.z - 0.0005)/Position_depth.w));
 
+        // float visibility = 1.0;
+        // for (int i=0;i<4;i++){
+        //     if (texture(ShadowMap, vec3(Position_depth.xy + (poissonDisk[i]/700.0 ), Position_depth.z)) <  Position_depth.z - 0.0005 ){
+        //         visibility-=0.2;
+        //     }
+        // }
         // Direct diffuse light
         float cosTheta = max(0, dot(N, L));
         vec3 directDiffuseLight = ShowDiffuse > 0.5 ? vec3(visibility * cosTheta) : vec3(0.0);
@@ -218,7 +233,7 @@ void main() {
         // For example so that the floor doesnt reflect itself when looking at it with a small angle
         float specularOcclusion;
         vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-        specularReflection = ShowIndirectSpecular > 0.5 ? 0.5 *  tracedSpecular.rgb : vec3(0.0);
+        specularReflection = ShowIndirectSpecular > 0.5 ? 0.2 *  tracedSpecular.rgb : vec3(0.0);
     }
 
     color = vec4(diffuseReflection + specularReflection, alpha);

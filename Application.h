@@ -28,6 +28,8 @@ public:
 
 	void DebugInputs();
 
+	void showShadowMapDebug(GLuint textureID);
+
 private:
 	int windowWidth_;
 	int windowHeight_;
@@ -40,11 +42,12 @@ private:
 	Shader *voxelizationShader;
 	Shader *shadowMapShader;
 	Shader *visualizeVoxelsShader;
+	Shader *shadowMapDebugShader;
 
 	Model *model;
 
 	//// Voxel Stuff
-	GLuint voxelTextureSize = 512;
+	GLuint voxelTextureSize = 256;
 	glm::mat4 projX_, projY_, projZ_;
 	const float voxelGridWorldSize_ = 150.0f;
 	Texture3D voxelTexture_;
@@ -60,7 +63,7 @@ private:
 
 
 	// // Light Stuff
-	glm::vec3 lightDirection_ = glm::vec3(1.5, 1.9, -0.25);
+	glm::vec3 lightDirection_ = glm::vec3(-1.5, 1.9, -0.25);
 
 
 	// Math Stuff
@@ -74,7 +77,9 @@ private:
 	bool showIndirectDiffuse = true;
 	bool showIndirectSpecular = true;
 	bool showAmbientOcclusion = true;
+	
 	bool showVoxels = false;
 	bool showMeshRender = true;
+	bool showShadowMap = false;
 };
 

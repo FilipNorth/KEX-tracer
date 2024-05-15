@@ -25,6 +25,7 @@ void Application::Initialize() {
 	visualizeVoxelsShader = new Shader("Shaders/renderVoxels.vert", "Shaders/renderVoxels.geom", "Shaders/renderVoxels.frag");
 	shadowMapShader = new Shader("Shaders/shadowMap.vert", "Shaders/shadowMap.frag");
 	voxelizationShader = new Shader("Shaders/voxelization.vert", "Shaders/voxelization.geom", "Shaders/voxelization.frag");
+	shadowMapDebugShader = new Shader("Shaders/shadowMapDebug.vert", "Shaders/shadowMapDebug.frag");
 	
 	// Load model
 	std::cout << "Loading model" << "\n";
@@ -119,8 +120,9 @@ void Application::Draw() {
 	//glBindImageTexture(6, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	//glUniform1i(glGetUniformLocation(standardShader_, "VoxelTextureBounce"), 6);
 
-	model->Draw(*defaultShader, *camera_, depthViewProjectionMatrix_);
-
+	if (showMeshRender) {
+		model->Draw(*defaultShader, *camera_, depthViewProjectionMatrix_);
+	}
 	if (showVoxels) {
 		// Draw voxels for debugging (can't draw large voxel sets like 512^3)
 		double currentTime = glfwGetTime();
@@ -128,6 +130,9 @@ void Application::Draw() {
 
 		//This is the shadow map
 		//drawTextureQuad(depthTexture_.textureID);
+	}
+	if(showShadowMap) {
+		showShadowMapDebug(depthTexture_.textureID);
 	}
 }
 
@@ -137,7 +142,7 @@ bool Application::SetupShadowMap() {
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFramebuffer_);
 
 	// Depth texture
-	depthTexture_.width = depthTexture_.height = 4096;
+	depthTexture_.width = depthTexture_.height = 4096 * 4;
 
 	viewMatrix = glm::lookAt(lightDirection_, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	projectionMatrix = glm::ortho	<float>(-120, 120, -120, 120, -500, 500);
@@ -363,11 +368,36 @@ void Application::DebugInputs() {
 		lightDirection_.x += 0.1;
 		newShadowMapNeeded = true;
 	}
-
+	if (glfwGetKey(window_, GLFW_KEY_PERIOD) == GLFW_PRESS) {
+		showShadowMap = true;
+	}
+	if (glfwGetKey(window_, GLFW_KEY_COMMA) == GLFW_PRESS) {
+		showShadowMap = false;
+	}
 	if (newShadowMapNeeded) {
 		CreateShadowMap();
 		CreateVoxels();
-		//std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
+		std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
 	}
 
+}
+
+// For debugging
+void Application::showShadowMapDebug(GLuint textureID) {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, 300, 300);
+
+	glUseProgram(shadowMapDebugShader->ID);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	glUniform1i(glGetUniformLocation(shadowMapDebugShader->ID, "Texture"), 0);
+
+	glBindVertexArray(quadVertexArray_);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO_);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableVertexAttribArray(0);
 }
