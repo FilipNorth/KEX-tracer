@@ -232,7 +232,7 @@ void main() {
         // Maybe fix so that the cone doesnt trace below the plane defined by the surface normal.
         // For example so that the floor doesnt reflect itself when looking at it with a small angle
         float specularOcclusion;
-        float angle = roughness;
+        float angle = roughness; // Look into what constants to use. Roughness gives angle of specular cone
         vec4 tracedSpecular = coneTrace(reflectDir, angle, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
         specularReflection = ShowIndirectSpecular > 0.5 ? 0.2 *  tracedSpecular.rgb : vec3(0.0);
     }
