@@ -38,7 +38,7 @@ uniform mat4 ModelViewMatrix;
 uniform mat4 ProjectionMatrix;
 
 // Bounce stuff
-//uniform layout(RGBA8) image3D VoxelTextureBounce;
+uniform layout(RGBA8) image3D VoxelTextureBounce;
 
 // Toggle "booleans"
 uniform float ShowDiffuse;
@@ -241,7 +241,23 @@ void main() {
         float specularOcclusion;
         float angle = roughness; // Look into what constants to use. Roughness gives angle of specular cone
         vec4 tracedSpecular = coneTrace(reflectDir, angle, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-        specularReflection = ShowIndirectSpecular > 0.5 ? 0.1 *  tracedSpecular.rgb : vec3(0.0);
+        specularReflection = ShowIndirectSpecular > 0.5 ? 0.2 *  tracedSpecular.rgb : vec3(0.0);
+    }
+
+    if(SaveLightToVoxel > 0.5) {
+
+        float voxelWorldSize = VoxelGridWorldSize / VoxelDimensions;
+        vec3 startPos = Position_world;
+        vec3 offset = vec3(1.0 / VoxelDimensions, 1.0 / VoxelDimensions, 0); // Why??
+        vec3 voxelTextureUV = startPos / (VoxelGridWorldSize * 0.5);
+        voxelTextureUV = voxelTextureUV * 0.5 + 0.5;
+        ivec3 StorePos = ivec3(voxelTextureUV * VoxelDimensions);
+
+	// Overwrite currently stored value.
+	// TODO: Atomic operations to get an averaged value, described in OpenGL insights about voxelization
+	// Required to avoid flickering when voxelizing every frame
+    
+        imageStore(VoxelTextureBounce, StorePos, vec4(2 * indirectDiffuseLight * occlusion + directDiffuseLight * 0.5 , alpha));
     }
 
     color = vec4(diffuseReflection + specularReflection, alpha);

@@ -20,9 +20,10 @@ public:
 	bool SetupShadowMap();
 	void CreateShadowMap();
 
-	bool Initialize3DTextures();
+	bool Initialize3DTextures(Texture3D& Texture);
 	void CreateVoxels();
 	void drawVoxels();
+	void CreateAdditionalBounces();
 
 	void InitializeLighting(Shader * shader);
 
@@ -43,6 +44,7 @@ private:
 	Shader *shadowMapShader;
 	Shader *visualizeVoxelsShader;
 	Shader *shadowMapDebugShader;
+	Shader *bounceShader;
 
 	Model *model;
 
@@ -81,5 +83,7 @@ private:
 	bool showVoxels = false;
 	bool showMeshRender = true;
 	bool showShadowMap = false;
+
+	bool doubleBounce = true;
 };
 

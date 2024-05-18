@@ -21,7 +21,8 @@ void Application::Initialize() {
 	camera_ = new Camera(windowWidth_, windowHeight_, glm::vec3(0.0f, 0.0f, 3.0f));
 	
 	// Load shaders
-	defaultShader = new Shader("../../../../Shaders/default.vert", "../../../../Shaders/default.frag");
+	defaultShader = new Shader("../../../../Shaders/default.vert",  "../../../../Shaders/default.frag");
+	bounceShader = new Shader("../../../../Shaders/default.vert", "../../../../Shaders/SaveAdditionalBounce.frag");
 	visualizeVoxelsShader = new Shader("../../../../Shaders/renderVoxels.vert", "../../../../Shaders/renderVoxels.geom", "../../../../Shaders/renderVoxels.frag");
 	shadowMapShader = new Shader("../../../../Shaders/shadowMap.vert", "../../../../Shaders/shadowMap.frag");
 	voxelizationShader = new Shader("../../../../Shaders/voxelization.vert", "../../../../Shaders/voxelization.geom", "../../../../Shaders/voxelization.frag");
@@ -37,12 +38,9 @@ void Application::Initialize() {
 
 
 	/// Initialize 3D Textures ///
-	if (Initialize3DTextures()) {
-		std::cout << "3D textures initialized" << "\n";
-	}
-	else {
-		std::cout << "Error initializing 3D textures" << "\n";
-	}
+	Initialize3DTextures(voxelTexture_);
+	Initialize3DTextures(voxelTextureBounce_);
+
 
 	CreateVoxels();
 
@@ -86,6 +84,7 @@ void Application::Draw() {
 	// Draw to the screen  
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, windowWidth_, windowHeight_);
+	//glViewport(0, 0, voxelTexture_.size, voxelTexture_.size);
 	// Set clear color and clear
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -105,24 +104,42 @@ void Application::Draw() {
 	glUniform1f(glGetUniformLocation(defaultShader->ID, "ShowIndirectDiffuse"), showIndirectDiffuse);
 	glUniform1f(glGetUniformLocation(defaultShader->ID, "ShowIndirectSpecular"), showIndirectSpecular);
 	glUniform1f(glGetUniformLocation(defaultShader->ID, "ShowAmbientOcculision"), showAmbientOcclusion);
+	glUniform1f(glGetUniformLocation(defaultShader->ID, "SaveLightToVoxel"), doubleBounce);
+
+	glUniformMatrix4fv(glGetUniformLocation(defaultShader->ID, "ProjX"), 1, GL_FALSE, &projX_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(defaultShader->ID, "ProjY"), 1, GL_FALSE, &projY_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(defaultShader->ID, "ProjZ"), 1, GL_FALSE, &projZ_[0][0]);
+
 
 	glActiveTexture(GL_TEXTURE0 + 5);
 	glBindTexture(GL_TEXTURE_2D, depthTexture_.textureID);
 	glUniform1i(glGetUniformLocation(defaultShader->ID, "ShadowMap"), 5);
 
-	glActiveTexture(GL_TEXTURE0 + 6);
-	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
-	glUniform1i(glGetUniformLocation(defaultShader->ID, "VoxelTexture"), 6);
 
 
 	/// This is for a implementation of multiple light bounces. Should be done in a compute shader instead
+	if (!doubleBounce) {
+		// Bind bounce texture
+		glActiveTexture(GL_TEXTURE0 + 6);
+		glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
+		glUniform1i(glGetUniformLocation(defaultShader->ID, "VoxelTexture"), 6);
 
-	//glBindImageTexture(6, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-	//glUniform1i(glGetUniformLocation(standardShader_, "VoxelTextureBounce"), 6);
+	}
+
+	if(doubleBounce) {
+		glActiveTexture(GL_TEXTURE0 + 7);
+		glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+		glUniform1i(glGetUniformLocation(defaultShader->ID, "VoxelTexture"), 7);
+	}
+
 
 	if (showMeshRender) {
 		model->Draw(*defaultShader, *camera_, depthViewProjectionMatrix_);
+		//glActiveTexture(GL_TEXTURE7);
+		//glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
+		//glGenerateMipmap(GL_TEXTURE_3D);
 	}
+
 	if (showVoxels) {
 		// Draw voxels for debugging (can't draw large voxel sets like 512^3)
 		double currentTime = glfwGetTime();
@@ -134,6 +151,60 @@ void Application::Draw() {
 	if(showShadowMap) {
 		showShadowMapDebug(depthTexture_.textureID);
 	}
+}
+
+void Application::CreateAdditionalBounces() {
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+
+	// Draw to the screen  
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, windowWidth_, windowHeight_);
+	//glViewport(0, 0, voxelTexture_.size, voxelTexture_.size);
+	// Set clear color and clear
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glm::mat4 viewMatrix = camera_->view;
+	glm::mat4 projectionMatrix = camera_->projection;
+
+	glUseProgram(bounceShader->ID);
+
+	glm::vec3 camPos = camera_->Position;
+	glUniform3f(glGetUniformLocation(bounceShader->ID, "CameraPosition"), camPos.x, camPos.y, camPos.z);
+	glUniform3f(glGetUniformLocation(bounceShader->ID, "LightDirection"), lightDirection_.x, lightDirection_.y, lightDirection_.z);
+	glUniform1f(glGetUniformLocation(bounceShader->ID, "VoxelGridWorldSize"), voxelGridWorldSize_);
+	glUniform1i(glGetUniformLocation(bounceShader->ID, "VoxelDimensions"), voxelTextureSize);
+
+	glUniform1f(glGetUniformLocation(bounceShader->ID, "ShowDiffuse"), showDirectDiffuse);
+	glUniform1f(glGetUniformLocation(bounceShader->ID, "ShowIndirectDiffuse"), showIndirectDiffuse);
+	glUniform1f(glGetUniformLocation(bounceShader->ID, "ShowIndirectSpecular"), showIndirectSpecular);
+	glUniform1f(glGetUniformLocation(bounceShader->ID, "ShowAmbientOcculision"), showAmbientOcclusion);
+	glUniform1f(glGetUniformLocation(bounceShader->ID, "SaveLightToVoxel"), doubleBounce);
+
+	glUniformMatrix4fv(glGetUniformLocation(bounceShader->ID, "ProjX"), 1, GL_FALSE, &projX_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(bounceShader->ID, "ProjY"), 1, GL_FALSE, &projY_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(bounceShader->ID, "ProjZ"), 1, GL_FALSE, &projZ_[0][0]);
+
+
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, depthTexture_.textureID);
+	glUniform1i(glGetUniformLocation(bounceShader->ID, "ShadowMap"), 5);
+
+	glActiveTexture(GL_TEXTURE0 + 6);
+	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+	glUniform1i(glGetUniformLocation(bounceShader->ID, "VoxelTexture"), 6);
+
+	glBindImageTexture(7, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(bounceShader->ID, "VoxelTextureBounce"), 7);
+
+	model->Draw(*bounceShader, *camera_, depthViewProjectionMatrix_);
+
+	glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 bool Application::SetupShadowMap() {
@@ -194,25 +265,25 @@ void Application::CreateShadowMap() {
 	glViewport(0, 0, windowWidth_, windowHeight_);
 }
 
-bool Application::Initialize3DTextures() {
-	voxelTexture_.size = voxelTextureSize;
+bool Application::Initialize3DTextures(Texture3D & Texture) {
+	Texture.size = voxelTextureSize;
 
 	glEnable(GL_TEXTURE_3D);
 
-	glGenTextures(1, &voxelTexture_.textureID);
-	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+	glGenTextures(1, &Texture.textureID);
+	glBindTexture(GL_TEXTURE_3D, Texture.textureID);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Fill 3D texture with empty values
 
-	size_t numVoxels = voxelTexture_.size * voxelTexture_.size * voxelTexture_.size;
+	size_t numVoxels = Texture.size * Texture.size * Texture.size;
 	GLubyte* data = new GLubyte[numVoxels * 4];
 	// Initialize voxel data
-	for (int k = 0; k < voxelTexture_.size; k++) {
-		for (int j = 0; j < voxelTexture_.size; j++) {
-			for (int i = 0; i < voxelTexture_.size; i++) {
-				size_t index = 4 * (size_t(i) + size_t(j) * size_t(voxelTexture_.size) + size_t(k) * size_t(voxelTexture_.size) * size_t(voxelTexture_.size));
+	for (int k = 0; k < Texture.size; k++) {
+		for (int j = 0; j < Texture.size; j++) {
+			for (int i = 0; i < Texture.size; i++) {
+				size_t index = 4 * (size_t(i) + size_t(j) * size_t(Texture.size) + size_t(k) * size_t(Texture.size) * size_t(Texture.size));
 				if (index >= numVoxels * 4) {
 					std::cerr << "Index out of range: " << index << std::endl;
 					continue; // Or handle more appropriately
@@ -225,7 +296,7 @@ bool Application::Initialize3DTextures() {
 		}
 	}
 
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, voxelTexture_.size, voxelTexture_.size, voxelTexture_.size, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, Texture.size, Texture.size, Texture.size, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	delete[] data;
 
@@ -345,6 +416,14 @@ void Application::DebugInputs() {
 		showAmbientOcclusion = !showAmbientOcclusion;
 		press4_ = true;
 	}
+	if (glfwGetKey(window_, GLFW_KEY_0) == GLFW_PRESS) {
+		doubleBounce = true;
+		newShadowMapNeeded = true;
+	}
+	if (glfwGetKey(window_, GLFW_KEY_9) == GLFW_PRESS) {
+		doubleBounce = false;
+		newShadowMapNeeded = true;
+	}
 
 	if (glfwGetKey(window_, GLFW_KEY_1) == GLFW_RELEASE) {
 		press1_ = false;
@@ -383,7 +462,9 @@ void Application::DebugInputs() {
 	if (newShadowMapNeeded) {
 		CreateShadowMap();
 		CreateVoxels();
+		CreateAdditionalBounces();
 		std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
+		newShadowMapNeeded = false;
 	}
 
 }
