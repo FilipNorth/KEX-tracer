@@ -52,7 +52,7 @@ private:
 	Model *model;
 
 	//// Voxel Stuff
-	GLuint voxelTextureSize = 256;
+	GLuint voxelTextureSize = 128;
 	glm::mat4 projX_, projY_, projZ_;
 	const float voxelGridWorldSize_ = 200.0f;
 	Texture3D voxelTexture_;
@@ -89,5 +89,8 @@ private:
 	bool showShadowMap = false;
 
 	bool doubleBounce = true;
+
+	double averageFPS;
+	double timeSinceStarted;
 };
 

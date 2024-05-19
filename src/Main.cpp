@@ -20,6 +20,7 @@ int main()
 	// Tell GLFW we are using the CORE profile
 	// So that means we only have the modern functions
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwSwapInterval(0);
 
 	GLFWwindow* window = glfwCreateWindow(width, height, "KEX-tracer", NULL, NULL);
 	// Error check if the window fails to create
@@ -37,9 +38,11 @@ int main()
 
 	Application app(height, width, window);
 	app.Initialize();
-
+	double testTime = 0;
+	double averageFPS = 0;
 	double previousTime, currentTime;
 	previousTime = glfwGetTime();
+	testTime = previousTime;
 	// Main while loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -50,10 +53,15 @@ int main()
 
 		if (timer > 2.0) {
 			std::cout << "FPS: " << 1.0 / deltaTime << std::endl;
+			averageFPS += 1 / deltaTime;
 			timer = 0.0;
 		}
 		else {
 			timer += deltaTime;
+		}
+		if (currentTime - testTime > 30) {
+			averageFPS / (currentTime - testTime);
+			//std::cout << averageFPS << " This is the average FPS over the last 30 seconds\n";
 		}
 		// Specify the color of the background
 		glClearColor(0.5f, 0.6f, 0.8f, 1.0f);

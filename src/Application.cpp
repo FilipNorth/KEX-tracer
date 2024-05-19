@@ -18,7 +18,8 @@ Application::~Application()
 void Application::Initialize() {
 	std::cout << "Initializing application" << "\n";
 
-	camera_ = new Camera(windowWidth_, windowHeight_, glm::vec3(0.0f, 0.0f, 3.0f));
+	camera_ = new Camera(windowWidth_, windowHeight_, glm::vec3(1.0f, 2.0f, 3.0f));
+	//camera_->Orientation = glm::vec3(0, 1, 0);
 	
 	// Load shaders
 	defaultShader = new Shader("../../../../Shaders/default.vert",  "../../../../Shaders/default.frag");
@@ -68,13 +69,21 @@ void Application::Initialize() {
 	CreateVoxels();
 	computeShaderTest();
 
+	timeSinceStarted = glfwGetTime();
+	averageFPS = 0;
+
 }
 
 void Application::Update(float deltaTime) {
 	camera_->Inputs(window_, deltaTime);
 	camera_->updateMatrix(45.0f, 0.1f, 500.0f);
 	DebugInputs();
-	computeShaderTest();
+	averageFPS += 1 / deltaTime;
+	timeSinceStarted += deltaTime;
+	if (timeSinceStarted > 30) {
+		//std::cout << averageFPS / timeSinceStarted << " This is the average fps over last 30 seconds \n";
+	}
+	//computeShaderTest();
 }
 
 void Application::Draw() {
@@ -91,7 +100,7 @@ void Application::Draw() {
 	glViewport(0, 0, windowWidth_, windowHeight_);
 	//glViewport(0, 0, voxelTexture_.size, voxelTexture_.size);
 	// Set clear color and clear
-	glClearColor(0, 0, 0, 1);
+	glClearColor(0.5f, 0.6f, 0.8f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glm::mat4 viewMatrix = camera_->view;
@@ -523,7 +532,10 @@ void Application::DebugInputs() {
 		CreateShadowMap();
 		CreateVoxels();
 		//CreateAdditionalBounces();
+		computeShaderTest();
 		std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
+		std::cout << camera_->Orientation.x << " " << camera_->Orientation.y << " " << camera_->Orientation.z << " camera orientation \n";
+		std::cout << camera_->Position.x << " " << camera_->Position.y << " " << camera_->Position.z << " camera position \n";
 		newShadowMapNeeded = false;
 	}
 

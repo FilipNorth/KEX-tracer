@@ -182,7 +182,7 @@ vec3 calcBumpNormal() {
 
     // Assuming your tangentNormal is in tangent space, you need to transform it to world space
     // If you have a TBN matrix available (from tangent, bitangent, and normal), you can use it:
-    return normalize(tangentToWorld * tangentNormal);
+    return normalize(Normal_world * tangentNormal);
 
     // If tangentToWorld is the transformation matrix from tangent space to world space.
 }
@@ -208,13 +208,14 @@ void main() {
 
     // Normal, light direction and eye direction in world coordinates
     vec3 N = calcBumpNormal();
-    vec3 L = vec3(LightDirection.z, LightDirection.x, LightDirection.y);
+    vec3 L = vec3(LightDirection.x, LightDirection.y, LightDirection.z);
     vec3 E = normalize(EyeDirection_world);
     float visibility = texture(ShadowMap, vec3(Position_depth.x, Position_depth.y, (Position_depth.z - 0.0005)/Position_depth.w));
     // Calculate diffuse light
 
+
             // Direct diffuse light
-    float cosTheta = max(0, dot(N, L)); 
+    float cosTheta = max(0, dot(Normal_world, L)); 
     vec3 directDiffuseLight = ShowDiffuse > 0.5 ? vec3(visibility * cosTheta) : vec3(0.0);
 
             // Indirect diffuse light
@@ -230,7 +231,7 @@ void main() {
         
 
         //diffuseReflection = 2.0 * occlusion * (directDiffuseLight + indirectDiffuseLight * 0.7) * materialColor.rgb;
-        diffuseReflection = ( (2.0 * occlusion * indirectDiffuseLight)  +  (0.3*directDiffuseLight) ) * diffuseColor.rgb + 0.0 * materialColor.rgb;
+        diffuseReflection = ( ( occlusion * indirectDiffuseLight)  +  (0.2*directDiffuseLight) ) * diffuseColor.rgb + 0.0 * materialColor.rgb;
     }
     
     // Calculate specular light
@@ -246,10 +247,10 @@ void main() {
         float specularOcclusion;
         float angle = roughness; // Look into what constants to use. Roughness gives angle of specular cone
         vec4 tracedSpecular = coneTrace(reflectDir, angle, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-        specularReflection = ShowIndirectSpecular > 0.5 ? 0.1 *  tracedSpecular.rgb : vec3(0.0);
+        specularReflection = ShowIndirectSpecular > 0.5 ? 0.3 *  tracedSpecular.rgb : vec3(0.0);
     }
 
-    color = vec4(diffuseReflection + specularReflection, alpha);
+    color = vec4(specularReflection + diffuseReflection, alpha);
 
 
 	//color = vec4(N, 1) * vec4(0.29, 0.99, 0.39, 0.0);

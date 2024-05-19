@@ -158,15 +158,8 @@ void main() {
     vec3 bitangent = cross(normal, tangent);
     tangentToWorld = inverse(transpose(mat3(tangent, normal, bitangent)));
 
-    
-
-    vec3 L = vec3(LightDirection.z, LightDirection.x, LightDirection.y);
     //vec3 E = normalize(EyeDirection_world);
     // Calculate diffuse light
-
-
-            // Direct diffuse light
-    float cosTheta = max(0, dot(L, normal));
 
             // Indirect diffuse light
 	float occlusion = 0.0;
@@ -177,7 +170,7 @@ void main() {
         return;
     }
 
-    indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 4.0 * indirectDiffuseLight * roughness : vec3(0.0);
+    indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 10.0 * indirectDiffuseLight * roughness : vec3(0.0);
     if(indirectDiffuseLight.r < 0.1 && indirectDiffuseLight.g < 0.1 && indirectDiffuseLight.b < 0.1){
          //imageStore(bounceTexture, writePos, vec4(1, 0, 0, 1));
          //return;
