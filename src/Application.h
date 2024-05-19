@@ -69,7 +69,7 @@ private:
 
 
 	// // Light Stuff
-	glm::vec3 lightDirection_ = glm::vec3(-1.5, 1.9, -0.25);
+	glm::vec3 lightDirection_ = glm::vec3(-1.5, 4, -0.25);
 
 
 	// Math Stuff

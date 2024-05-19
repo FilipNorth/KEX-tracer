@@ -208,7 +208,7 @@ void main() {
 
     // Normal, light direction and eye direction in world coordinates
     vec3 N = calcBumpNormal();
-    vec3 L = vec3(LightDirection.x, LightDirection.y, LightDirection.z);
+    vec3 L = vec3(LightDirection.z, LightDirection.x, LightDirection.y);
     vec3 E = normalize(EyeDirection_world);
     float visibility = texture(ShadowMap, vec3(Position_depth.x, Position_depth.y, (Position_depth.z - 0.0005)/Position_depth.w));
     // Calculate diffuse light
@@ -223,7 +223,7 @@ void main() {
     indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 4.0 * indirectDiffuseLight * roughness : vec3(0.0);
 
         // Sum direct and indirect diffuse light and tweak a little bit
-        occlusion = min(1.0,  2 * occlusion); // Make occlusion brighter
+        occlusion = min(1,  occlusion); // Make occlusion brighter
     vec3 diffuseReflection;
     {
         // Shadow map

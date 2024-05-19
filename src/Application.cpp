@@ -213,6 +213,8 @@ void Application::CreateAdditionalBounces() {
 }
 
 void Application::computeShaderTest() {
+
+
 	glm::mat4 viewMatrix = camera_->view;
 	glm::mat4 projectionMatrix = camera_->projection;
 
@@ -220,7 +222,7 @@ void Application::computeShaderTest() {
 	
 	glBindImageTexture(0, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	//glBindImageTexture(1, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-
+	
 	glActiveTexture(GL_TEXTURE0 + 6);
 	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelTexture"), 6);
@@ -242,6 +244,11 @@ void Application::computeShaderTest() {
 
 	// Make sure all dispatches are completed.
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+	glActiveTexture(GL_TEXTURE0 + 7);
+	glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
 }
 
 bool Application::SetupShadowMap() {
@@ -415,9 +422,17 @@ void Application::drawVoxels() {
 	glUniformMatrix4fv(glGetUniformLocation(visualizeVoxelsShader->ID, "ModelViewMatrix"), 1, GL_FALSE, &modelViewMatrix[0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(visualizeVoxelsShader->ID, "ProjectionMatrix"), 1, GL_FALSE, &projectionMatrix[0][0]);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
-	glUniform1i(glGetUniformLocation(visualizeVoxelsShader->ID, "VoxelsTexture"), 0);
+
+	if (doubleBounce) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
+		glUniform1i(glGetUniformLocation(visualizeVoxelsShader->ID, "VoxelsTexture"), 0);
+	}
+	if (!doubleBounce) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+		glUniform1i(glGetUniformLocation(visualizeVoxelsShader->ID, "VoxelsTexture"), 0);
+	}
 
 	glBindVertexArray(visualizeVoxelsShader->ID);
 	glDrawArrays(GL_POINTS, 0, numVoxels);
