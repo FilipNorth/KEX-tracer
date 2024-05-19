@@ -17,6 +17,7 @@ out fData {
     mat4 projectionMatrix;
     flat int axis;
     vec4 position_depth;
+    vec3 normal;
 } frag;
 
 uniform mat4 ProjX;
@@ -26,11 +27,11 @@ uniform mat4 ProjZ;
 void main() {
     vec3 p1 = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
     vec3 p2 = gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz;
-    vec3 normal = normalize(cross(p1,p2));
+    frag.normal = normalize(cross(p1,p2));
 
-    float nDotX = abs(normal.x);
-    float nDotY = abs(normal.y);
-    float nDotZ = abs(normal.z);
+    float nDotX = abs(frag.normal.x);
+    float nDotY = abs(frag.normal.y);
+    float nDotZ = abs(frag.normal.z);
 
     // 0 = x axis dominant, 1 = y axis dominant, 2 = z axis dominant
     frag.axis = (nDotX >= nDotY && nDotX >= nDotZ) ? 1 : (nDotY >= nDotX && nDotY >= nDotZ) ? 2 : 3;

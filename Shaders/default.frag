@@ -129,13 +129,16 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, out float occlusion) {
     float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
     vec3 startPos = Position_world + Normal_world * voxelWorldSize; // Plus move away slightly in the normal direction to avoid
                                                                     // self occlusion in flat surfaces
-
+    int steps = 0;
     while(dist < MAX_DIST && alpha < ALPHA_THRESH) {
         // smallest sample diameter possible is the voxel size
         float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
         float lodLevel = log2(diameter / voxelWorldSize);
         vec4 voxelColor = sampleVoxels(startPos + dist * direction, lodLevel);
 
+        if(steps == 0){
+            //alpha = 1.0 - voxelColor.a;
+        }    
         // front-to-back compositing
         float a = (1.0 - alpha);
         color += a * voxelColor.rgb;
@@ -144,6 +147,7 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, out float occlusion) {
         occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
         dist += diameter * 1.0; // smoother
         //dist += diameter; // faster but misses more voxels
+        steps++;
     }
 
     return vec4(color, alpha);
@@ -174,6 +178,8 @@ vec3 calcBumpNormal() {
     // Convert from [0, 1] range to [-1, 1] range
     vec3 tangentNormal = encodedNormal * 2.0 - 1.0;
 
+
+
     // Assuming your tangentNormal is in tangent space, you need to transform it to world space
     // If you have a TBN matrix available (from tangent, bitangent, and normal), you can use it:
     return normalize(tangentToWorld * tangentNormal);
@@ -198,18 +204,17 @@ void main() {
     }
     
     //tangentToWorld = inverse(transpose(mat3(Tangent_world, Normal_world, Bitangent_world)));
-    tangentToWorld = mat3(Tangent_world, Bitangent_world, Normal_world); // Ensure proper orientation and handedness
-
+    tangentToWorld = inverse(transpose(mat3(Tangent_world, Normal_world, Bitangent_world))); // Ensure proper orientation and handedness
 
     // Normal, light direction and eye direction in world coordinates
     vec3 N = calcBumpNormal();
-    vec3 L = LightDirection;
+    vec3 L = vec3(LightDirection.x, LightDirection.y, LightDirection.z);
     vec3 E = normalize(EyeDirection_world);
     float visibility = texture(ShadowMap, vec3(Position_depth.x, Position_depth.y, (Position_depth.z - 0.0005)/Position_depth.w));
     // Calculate diffuse light
 
             // Direct diffuse light
-    float cosTheta = max(0, dot(N, L));
+    float cosTheta = max(0, dot(N, L)); 
     vec3 directDiffuseLight = ShowDiffuse > 0.5 ? vec3(visibility * cosTheta) : vec3(0.0);
 
             // Indirect diffuse light
@@ -218,14 +223,14 @@ void main() {
     indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 4.0 * indirectDiffuseLight * roughness : vec3(0.0);
 
         // Sum direct and indirect diffuse light and tweak a little bit
-        occlusion = min(1.0,  0.5 * occlusion); // Make occlusion brighter
+        occlusion = min(1.0,  2 * occlusion); // Make occlusion brighter
     vec3 diffuseReflection;
     {
         // Shadow map
         
 
         //diffuseReflection = 2.0 * occlusion * (directDiffuseLight + indirectDiffuseLight * 0.7) * materialColor.rgb;
-        diffuseReflection = ( (2.0 * occlusion * indirectDiffuseLight)  +  (0.3*directDiffuseLight) ) * diffuseColor.rgb + 0.05 * diffuseColor.rgb ;
+        diffuseReflection = ( (2.0 * occlusion * indirectDiffuseLight)  +  (0.3*directDiffuseLight) ) * diffuseColor.rgb + 0.0 * materialColor.rgb;
     }
     
     // Calculate specular light

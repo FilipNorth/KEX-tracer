@@ -7,10 +7,14 @@ in fData {
     mat4 projectionMatrix;
     flat int axis;
     vec4 position_depth; // Position from the shadow map point of view
+	vec3 normal;
 } frag;
 
 uniform layout(RGBA8) image3D VoxelTexture;
+uniform layout(RGBA32F) image3D VoxelNormalTexture;
 uniform sampler2D diffuse;
+uniform sampler2D metallicRoughnessTexture;
+uniform sampler2D normalMap;
 uniform sampler2DShadow ShadowMap;
 uniform int VoxelDimensions;
 
@@ -39,9 +43,12 @@ void main() {
 	// Flip it!
 	texPos.z = VoxelDimensions - texPos.z - 1;
 
+	vec4 metallicRoughnessColor = texture(metallicRoughnessTexture, frag.UV);
+    float roughness = metallicRoughnessColor.g;
 	// Overwrite currently stored value.
 	// TODO: Atomic operations to get an averaged value, described in OpenGL insights about voxelization
 	// Required to avoid flickering when voxelizing every frame
     imageStore(VoxelTexture, texPos, vec4(materialColor.rgb * visibility, 1.0));
+	imageStore(VoxelNormalTexture, texPos, vec4(frag.normal.x, frag.normal.y, frag.normal.z, roughness));
 
 }

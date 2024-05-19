@@ -30,18 +30,23 @@ uniform mat4 ModelViewMatrix;
 uniform mat4 ProjectionMatrix;
 uniform mat4 DepthModelViewProjectionMatrix;
 
-vec3 createOrthogonalVectors(vec3 n) {
+vec3 createTangent(vec3 n) {
     vec3 tangent;
-    if (abs(n.x) > abs(n.z)) {
-        tangent = vec3(-n.y, n.x, 0.0);
-    } else {
+    if (abs(n.x) < abs(n.y) && abs(n.x) < abs(n.z)) {
+        // Create tangent perpendicular to the X-axis
         tangent = vec3(0.0, -n.z, n.y);
+    } else if (abs(n.y) <= abs(n.x) && abs(n.y) < abs(n.z)) {
+        // Create tangent perpendicular to the Y-axis
+        tangent = vec3(-n.z, 0.0, n.x);
+    } else {
+        // Create tangent perpendicular to the Z-axis
+        tangent = vec3(-n.y, 0, n.x);
     }
-    return tangent = normalize(tangent);
+    return normalize(tangent);
 }
 vec2 scaleAndBias(vec2 p) { return 0.5f * p + vec2(0.5f); }
 void main() {
-    vec3 tangent = createOrthogonalVectors(Normal); // Declare tangent (and bitangent
+    vec3 tangent = createTangent(Normal); // Declare tangent (and bitangent
     vec3 bitangent = cross(Normal, tangent);
 
 	gl_Position =  ProjectionMatrix * ModelViewMatrix * vec4(Position,1);

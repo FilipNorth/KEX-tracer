@@ -119,6 +119,24 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 
 }
 
+Shader::Shader(const char* computeFile) {
+	std::string computeCode = get_file_contents(computeFile);
+	const char* computeSource = computeCode.c_str();
+	GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
+	glShaderSource(computeShader, 1, &computeSource, NULL);
+	// Compile the Vertex Shader into machine code
+	glCompileShader(computeShader);
+	// Checks if Shader compiled succesfully
+	compileErrors(computeShader, "COMPUTE");
+	// Create Shader Program Object and get its reference
+	ID = glCreateProgram();
+	glAttachShader(ID, computeShader);
+	glLinkProgram(ID);
+	// Checks if Shaders linked succesfully
+	compileErrors(ID, "PROGRAM");
+	glDeleteShader(computeShader);
+}
+
 // Activates the Shader Program
 void Shader::Activate()
 {

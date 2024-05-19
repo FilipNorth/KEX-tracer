@@ -17,6 +17,7 @@ public:
 	// Constructor that build the Shader Program from 2 different shaders
 	Shader(const char* vertexFile, const char* geometryFile, const char* fragmentFile);
 	Shader(const char* vertexFile, const char* fragmentFile);
+	Shader(const char* computeFile);
 
 	// Activates the Shader Program
 	void Activate();

@@ -20,7 +20,7 @@ public:
 	bool SetupShadowMap();
 	void CreateShadowMap();
 
-	bool Initialize3DTextures(Texture3D& Texture);
+	bool Initialize3DTextures(Texture3D& Texture, GLint textureCoding, GLint dataType);
 	void CreateVoxels();
 	void drawVoxels();
 	void CreateAdditionalBounces();
@@ -30,6 +30,8 @@ public:
 	void DebugInputs();
 
 	void showShadowMapDebug(GLuint textureID);
+
+	void computeShaderTest();
 
 private:
 	int windowWidth_;
@@ -45,15 +47,17 @@ private:
 	Shader *visualizeVoxelsShader;
 	Shader *shadowMapDebugShader;
 	Shader *bounceShader;
+	Shader *computeShader;
 
 	Model *model;
 
 	//// Voxel Stuff
-	GLuint voxelTextureSize = 512;
+	GLuint voxelTextureSize = 256;
 	glm::mat4 projX_, projY_, projZ_;
-	const float voxelGridWorldSize_ = 150.0f;
+	const float voxelGridWorldSize_ = 200.0f;
 	Texture3D voxelTexture_;
 	Texture3D voxelTextureBounce_;
+	Texture3D voxelNormalTexture_;
 	GLuint quadVertexArray_;
 	GLuint quadVBO_;
 
