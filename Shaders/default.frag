@@ -49,7 +49,7 @@ uniform float SaveLightToVoxel;
 
 uniform vec3 LightDirection;
 
-const float MAX_DIST = 100.0;
+const float MAX_DIST = 500.0;
 const float ALPHA_THRESH = 0.95;
 
 const int DIFFUSE_CONE_COUNT = 16;
@@ -117,7 +117,7 @@ vec4 sampleVoxels(vec3 worldPosition, float lod) {
 }
 
 // Third argument to say how long between steps?
-vec4 coneTrace(vec3 direction, float tanHalfAngle, out float occlusion) {
+vec4 coneTrace(vec3 direction, float tanHalfAngle, int specular, out float occlusion) {
     
     // lod level 0 mipmap is full size, level 1 is half that size and so on
     float lod = 0.0;
@@ -150,6 +150,10 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, out float occlusion) {
         steps++;
     }
 
+    if(dist >= MAX_DIST && specular == 1) {
+        return vec4(color, alpha) * 3; 
+    }
+
     return vec4(color, alpha);
 }
 
@@ -162,7 +166,7 @@ vec4 indirectLight(out float occlusion_out) {
         // 22.5 degree cones -> tan(22.5/2) = 0.198
         // 60 degree cones -> tan(30) = 0.577
         // 90 degree cones -> tan(45) = 1.0
-        color += coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, occlusion);
+        color += coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, 0, occlusion);
         occlusion_out += coneWeights[i] * occlusion;
     }
 
@@ -231,26 +235,29 @@ void main() {
         
 
         //diffuseReflection = 2.0 * occlusion * (directDiffuseLight + indirectDiffuseLight * 0.7) * materialColor.rgb;
-        diffuseReflection = ( ( occlusion * indirectDiffuseLight)  +  (0.2*directDiffuseLight) ) * diffuseColor.rgb + 0.0 * materialColor.rgb;
+        diffuseReflection = ( (2*  occlusion * indirectDiffuseLight)  +  (0.2*directDiffuseLight) ) * diffuseColor.rgb + 0.0 * materialColor.rgb;
     }
-    
+    vec3 reflectDir = normalize(reflect(-E, N));
+
     // Calculate specular light
     vec3 specularReflection;
     {
         ///vec4 specularColor = texture(SpecularTexture, UV);
         // Some specular textures are grayscale:
         //specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
-        vec3 reflectDir = normalize(reflect(-E, N));
+    
 
         // Maybe fix so that the cone doesnt trace below the plane defined by the surface normal.
         // For example so that the floor doesnt reflect itself when looking at it with a small angle
         float specularOcclusion;
         float angle = roughness; // Look into what constants to use. Roughness gives angle of specular cone
-        vec4 tracedSpecular = coneTrace(reflectDir, angle, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
+        vec4 tracedSpecular = coneTrace(reflectDir, angle, 1,  specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
         specularReflection = ShowIndirectSpecular > 0.5 ? 0.3 *  tracedSpecular.rgb : vec3(0.0);
     }
 
-    color = vec4(specularReflection + diffuseReflection, alpha);
+    color = vec4(diffuseReflection +  specularReflection, alpha);
+
+
 
 
 	//color = vec4(N, 1) * vec4(0.29, 0.99, 0.39, 0.0);

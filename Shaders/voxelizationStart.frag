@@ -10,7 +10,7 @@ in fData {
 } frag;
 
 uniform layout(binding = 0, RGBA8) image3D VoxelTexture;
-//uniform layout(binding = 2, RGBA16F) image3D VoxelNormalTexture;
+uniform layout(binding = 2, RGBA16F) image3D VoxelNormalTexture;
 uniform sampler2D diffuse;
 uniform sampler2D metallicRoughnessTexture;
 uniform sampler2D normalMap;
@@ -48,6 +48,6 @@ void main() {
 	// TODO: Atomic operations to get an averaged value, described in OpenGL insights about voxelization
 	// Required to avoid flickering when voxelizing every frame
     imageStore(VoxelTexture, texPos, vec4(materialColor.rgb * visibility, 1.0));
-	//imageStore(VoxelNormalTexture, texPos, vec4(frag.normal.x, frag.normal.y, frag.normal.z, roughness));
+	imageStore(VoxelNormalTexture, texPos, vec4(frag.normal.x, frag.normal.y, frag.normal.z, roughness));
 
 }

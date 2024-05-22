@@ -70,8 +70,8 @@ int main()
 
 
 		app.Update(deltaTime);
+
 		app.Draw();
-		
 
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);

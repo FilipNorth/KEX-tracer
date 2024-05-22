@@ -27,13 +27,19 @@ void Application::Initialize() {
 	visualizeVoxelsShader = new Shader("../../../../Shaders/renderVoxels.vert", "../../../../Shaders/renderVoxels.geom", "../../../../Shaders/renderVoxels.frag");
 	shadowMapShader = new Shader("../../../../Shaders/shadowMap.vert", "../../../../Shaders/shadowMap.frag");
 	voxelizationShader = new Shader("../../../../Shaders/voxelization.vert", "../../../../Shaders/voxelization.geom", "../../../../Shaders/voxelization.frag");
+	voxelInitializaton = new Shader("../../../../Shaders/voxelization.vert", "../../../../Shaders/voxelization.geom", "../../../../Shaders/voxelizationStart.frag");
 	shadowMapDebugShader = new Shader("../../../../Shaders/shadowMapDebug.vert", "../../../../Shaders/shadowMapDebug.frag");
+
+	lightInjectShader = new Shader("../../../../Shaders/default.vert", "../../../../Shaders/directLightVoxel.frag");
 
 	computeShader = new Shader("../../../../Shaders/lightBounces.comp");
 	
 	// Load model
 	std::cout << "Loading model" << "\n";
+
+	double startTime = glfwGetTime();
 	model = new Model("../../../../Models/Sponza-glTF/Sponza.gltf");
+	std::cout <<  glfwGetTime() - startTime << " Time taken to load model \n";
 	std::cout << "Model loaded" << "\n";
 
 	/// Initialize Shadow Map ///
@@ -43,10 +49,8 @@ void Application::Initialize() {
 	/// Initialize 3D Textures ///
 	Initialize3DTextures(voxelTexture_, GL_RGBA8, GL_UNSIGNED_BYTE);
 	Initialize3DTextures(voxelTextureBounce_, GL_RGBA8, GL_UNSIGNED_BYTE);
-	Initialize3DTextures(voxelNormalTexture_, GL_RGBA32F, GL_FLOAT);
+	Initialize3DTextures(voxelNormalTexture_, GL_RGBA16F, GL_FLOAT);
 
-
-	CreateVoxels();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -65,24 +69,102 @@ void Application::Initialize() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
 	glGenVertexArrays(1, &quadVertexArray_);
 
-	CreateShadowMap();
-	CreateVoxels();
-	computeShaderTest();
-
 	timeSinceStarted = glfwGetTime();
 	averageFPS = 0;
 
+
+
+	// Activate voxel shader
+	glUseProgram(voxelInitializaton->ID);
+
+	// Set uniforms
+	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "VoxelDimensions"), voxelTexture_.size);
+	glUniformMatrix4fv(glGetUniformLocation(voxelInitializaton->ID, "ProjX"), 1, GL_FALSE, &projX_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(voxelInitializaton->ID, "ProjY"), 1, GL_FALSE, &projY_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(voxelInitializaton->ID, "ProjZ"), 1, GL_FALSE, &projZ_[0][0]);
+
+	// Bind depth texture
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, depthTexture_.textureID);
+	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "ShadowMap"), 5);
+
+	// Bind single level of texture to image unit so we can write to it from shaders
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindImageTexture(0, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "VoxelTexture"), 0);
+
+	// Bind single level of texture to image unit so we can write to it from shaders
+	glActiveTexture(GL_TEXTURE0 + 2);
+	glBindImageTexture(2, voxelNormalTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "VoxelNormalTexture"), 2);
+
+	// activate voxel update shader
+
+		// Activate voxel shader
+	glUseProgram(voxelizationShader->ID);
+
+	// Set uniforms
+	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelDimensions"), voxelTexture_.size);
+	glUniformMatrix4fv(glGetUniformLocation(voxelizationShader->ID, "ProjX"), 1, GL_FALSE, &projX_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(voxelizationShader->ID, "ProjY"), 1, GL_FALSE, &projY_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(voxelizationShader->ID, "ProjZ"), 1, GL_FALSE, &projZ_[0][0]);
+
+	// Bind depth texture
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, depthTexture_.textureID);
+	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "ShadowMap"), 5);
+
+	// Bind single level of texture to image unit so we can write to it from shaders
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindImageTexture(0, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelTexture"), 0);
+
+	// Activate compute shader
+
+	glm::mat4 viewMatrix = camera_->view;
+	glm::mat4 projectionMatrix = camera_->projection;
+
+
+	glUseProgram(computeShader->ID);
+
+	glBindImageTexture(1, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "bounceTexture"), 1);
+	//glBindImageTexture(1, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelTexture"), 0);
+
+
+
+	glActiveTexture(GL_TEXTURE0 + 2);
+	glBindTexture(GL_TEXTURE_3D, voxelNormalTexture_.textureID);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelNormalTexture"), 2);
+
+
+	startTime = glfwGetTime();
+	CreateShadowMap();
+	std::cout << glfwGetTime() - startTime << " Time taken to create shadowMap \n";
+
+	startTime = glfwGetTime();
+	CreateVoxels();
+	std::cout << glfwGetTime() - startTime << " Time taken to create voxels \n";
+
+	startTime = glfwGetTime();
+	computeShaderTest();
+	std::cout << glfwGetTime() - startTime << " Time taken to create first bounce \n";
 }
 
 void Application::Update(float deltaTime) {
 	camera_->Inputs(window_, deltaTime);
 	camera_->updateMatrix(45.0f, 0.1f, 500.0f);
 	DebugInputs();
-	averageFPS += 1 / deltaTime;
-	timeSinceStarted += deltaTime;
-	if (timeSinceStarted > 30) {
+	//averageFPS += 1 / deltaTime;
+	///timeSinceStarted += deltaTime;
+	//if (timeSinceStarted > 30) {
 		//std::cout << averageFPS / timeSinceStarted << " This is the average fps over last 30 seconds \n";
-	}
+	//}
 	//computeShaderTest();
 }
 
@@ -91,6 +173,7 @@ void Application::Draw() {
 	// --------------------- Draw the scene normally --------------------- //
 	// ------------------------------------------------------------------- //
 	//CreateVoxels();
+	//double timer = glfwGetTime();
 
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
@@ -132,18 +215,18 @@ void Application::Draw() {
 
 
 	/// This is for a implementation of multiple light bounces. Should be done in a compute shader instead
-	if (!doubleBounce) {
+	if (doubleBounce) {
 		// Bind bounce texture
-		glActiveTexture(GL_TEXTURE0 + 6);
+		glActiveTexture(GL_TEXTURE0 + 7);
 		glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
-		glUniform1i(glGetUniformLocation(defaultShader->ID, "VoxelTexture"), 6);
+		glUniform1i(glGetUniformLocation(defaultShader->ID, "VoxelTexture"), 7);
 
 	}
 
-	if(doubleBounce) {
-		glActiveTexture(GL_TEXTURE0 + 7);
+	if(!doubleBounce) {
+		glActiveTexture(GL_TEXTURE0 + 6);
 		glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
-		glUniform1i(glGetUniformLocation(defaultShader->ID, "VoxelTexture"), 7);
+		glUniform1i(glGetUniformLocation(defaultShader->ID, "VoxelTexture"), 6);
 	}
 
 
@@ -165,98 +248,61 @@ void Application::Draw() {
 	if(showShadowMap) {
 		showShadowMapDebug(depthTexture_.textureID);
 	}
+
+	//std::cout << glfwGetTime() - timer << " Time to cone trace normally \n\n";
 }
 
-void Application::CreateAdditionalBounces() {
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_TEST);
-
-	// Draw to the screen  
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, windowWidth_, windowHeight_);
-	//glViewport(0, 0, voxelTexture_.size, voxelTexture_.size);
-	// Set clear color and clear
-	glClearColor(0, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glm::mat4 viewMatrix = camera_->view;
-	glm::mat4 projectionMatrix = camera_->projection;
-
-	glUseProgram(bounceShader->ID);
-
-	glm::vec3 camPos = camera_->Position;
-	glUniform3f(glGetUniformLocation(bounceShader->ID, "CameraPosition"), camPos.x, camPos.y, camPos.z);
-	glUniform3f(glGetUniformLocation(bounceShader->ID, "LightDirection"), lightDirection_.x, lightDirection_.y, lightDirection_.z);
-	glUniform1f(glGetUniformLocation(bounceShader->ID, "VoxelGridWorldSize"), voxelGridWorldSize_);
-	glUniform1i(glGetUniformLocation(bounceShader->ID, "VoxelDimensions"), voxelTextureSize);
-
-	glUniform1f(glGetUniformLocation(bounceShader->ID, "ShowDiffuse"), showDirectDiffuse);
-	glUniform1f(glGetUniformLocation(bounceShader->ID, "ShowIndirectDiffuse"), showIndirectDiffuse);
-	glUniform1f(glGetUniformLocation(bounceShader->ID, "ShowIndirectSpecular"), showIndirectSpecular);
-	glUniform1f(glGetUniformLocation(bounceShader->ID, "ShowAmbientOcculision"), showAmbientOcclusion);
-	glUniform1f(glGetUniformLocation(bounceShader->ID, "SaveLightToVoxel"), doubleBounce);
-
-	glUniformMatrix4fv(glGetUniformLocation(bounceShader->ID, "ProjX"), 1, GL_FALSE, &projX_[0][0]);
-	glUniformMatrix4fv(glGetUniformLocation(bounceShader->ID, "ProjY"), 1, GL_FALSE, &projY_[0][0]);
-	glUniformMatrix4fv(glGetUniformLocation(bounceShader->ID, "ProjZ"), 1, GL_FALSE, &projZ_[0][0]);
-
-
-	glActiveTexture(GL_TEXTURE0 + 5);
-	glBindTexture(GL_TEXTURE_2D, depthTexture_.textureID);
-	glUniform1i(glGetUniformLocation(bounceShader->ID, "ShadowMap"), 5);
-
-	glActiveTexture(GL_TEXTURE0 + 6);
-	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
-	glUniform1i(glGetUniformLocation(bounceShader->ID, "VoxelTexture"), 6);
-
-	glBindImageTexture(7, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-	glUniform1i(glGetUniformLocation(bounceShader->ID, "VoxelTextureBounce"), 7);
-
-	model->Draw(*bounceShader, *camera_, depthViewProjectionMatrix_);
-
-	glActiveTexture(GL_TEXTURE7);
-	glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
-	glGenerateMipmap(GL_TEXTURE_3D);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
 
 void Application::computeShaderTest() {
 
+	//GLuint query;
+	//glGenQueries(1, &query);
+
+	//glBeginQuery(GL_TIME_ELAPSED, query);
 
 	glm::mat4 viewMatrix = camera_->view;
 	glm::mat4 projectionMatrix = camera_->projection;
 
+	double startTime = glfwGetTime();
 	glUseProgram(computeShader->ID);
+	std::cout << glfwGetTime() - startTime << " Time taken swapt to compute shader \n";
 	
-	glBindImageTexture(0, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	startTime = glfwGetTime();
+	//glBindImageTexture(1, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "bounceTexture"), 1);
+	std::cout << glfwGetTime() - startTime << " Time taken to bind voxelTextureBounce to computeShader \n";
 	//glBindImageTexture(1, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 	
-	glActiveTexture(GL_TEXTURE0 + 6);
-	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
-	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelTexture"), 6);
+	startTime = glfwGetTime();
+	glActiveTexture(GL_TEXTURE0 + 0);
+	//glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelTexture"), 0);
+	std::cout << glfwGetTime() - startTime << " Time taken to send voxelTexture to computeShader \n";
 
-	glActiveTexture(GL_TEXTURE0 + 7);
+	startTime = glfwGetTime();
+	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_3D, voxelNormalTexture_.textureID);
-	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelNormalTexture"), 7);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelNormalTexture"), 2);
+	std::cout << glfwGetTime() - startTime << " Time taken to send voxelNormalTexture to computeShader \n";
 
-	glUniform1f(glGetUniformLocation(computeShader->ID, "ShowDiffuse"), showDirectDiffuse);
-	glUniform1f(glGetUniformLocation(computeShader->ID, "ShowIndirectDiffuse"), showIndirectDiffuse);
-	glUniform1f(glGetUniformLocation(computeShader->ID, "ShowIndirectSpecular"), showIndirectSpecular);
-	glUniform1f(glGetUniformLocation(computeShader->ID, "ShowAmbientOcculision"), showAmbientOcclusion);
-	glUniform1f(glGetUniformLocation(computeShader->ID, "SaveLightToVoxel"), doubleBounce);
 	glUniform3f(glGetUniformLocation(computeShader->ID, "LightDirection"), lightDirection_.x, lightDirection_.y, lightDirection_.z);
-	glUniform1i(glGetUniformLocation(bounceShader->ID, "VoxelDimensions"), voxelTextureSize);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelDimensions"), voxelTextureSize);
 
-
+	startTime = glfwGetTime();
 	glDispatchCompute(voxelTextureSize, voxelTextureSize, voxelTextureSize);
 
 	// Make sure all dispatches are completed.
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
+	
 	glActiveTexture(GL_TEXTURE0 + 7);
-	glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
+	//glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
 	glGenerateMipmap(GL_TEXTURE_3D);
+	std::cout << glfwGetTime() - startTime << " Time taken for compute shader and mip mapping them \n";
+
+	//glEndQuery(GL_TIME_ELAPSED);
+	//GLint64 elapsed_time;
+	//glGetQueryObjecti64v(query, GL_QUERY_RESULT, &elapsed_time);
+	//std::cout << "Time elapsed: " << elapsed_time << " nanoseconds" << std::endl;
 
 }
 
@@ -334,7 +380,7 @@ bool Application::Initialize3DTextures(Texture3D & Texture, GLint textureCoding,
 	if (dataType == GL_UNSIGNED_BYTE) {
 		GLubyte* data = new GLubyte[numVoxels * 4];
 		//GLubyte* data = new GLubyte[numVoxels * 4];
-// Initialize voxel data
+		// Initialize voxel data
 		std::fill_n(data, numVoxels * 4, 0);
 
 		glTexImage3D(GL_TEXTURE_3D, 0, textureCoding, Texture.size, Texture.size, Texture.size, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -384,6 +430,47 @@ void Application::CreateVoxels() {
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glUseProgram(voxelInitializaton->ID);
+
+	// Set uniforms
+	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "VoxelDimensions"), voxelTexture_.size);
+	glUniformMatrix4fv(glGetUniformLocation(voxelInitializaton->ID, "ProjX"), 1, GL_FALSE, &projX_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(voxelInitializaton->ID, "ProjY"), 1, GL_FALSE, &projY_[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(voxelInitializaton->ID, "ProjZ"), 1, GL_FALSE, &projZ_[0][0]);
+
+	// Bind depth texture
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, depthTexture_.textureID);
+	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "ShadowMap"), 5);
+
+	// Bind single level of texture to image unit so we can write to it from shaders
+	glActiveTexture(GL_TEXTURE0 + 0);
+	//glBindImageTexture(6, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "VoxelTexture"), 0);
+
+	// Bind single level of texture to image unit so we can write to it from shaders
+	glActiveTexture(GL_TEXTURE0 + 2);
+	//glBindImageTexture(0, voxelNormalTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "VoxelNormalTexture"), 2);
+
+	model->DrawVoxels(*voxelInitializaton, *camera_, depthViewProjectionMatrix_);
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	//glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+	glGenerateMipmap(GL_TEXTURE_3D);
+
+	// Reset viewport
+	glViewport(0, 0, windowWidth_, windowHeight_);
+}
+
+void Application::UpdateVoxels() {
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+
+	glViewport(0, 0, voxelTexture_.size, voxelTexture_.size);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glUseProgram(voxelizationShader->ID);
 
 	// Set uniforms
@@ -398,17 +485,19 @@ void Application::CreateVoxels() {
 	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "ShadowMap"), 5);
 
 	// Bind single level of texture to image unit so we can write to it from shaders
-	glBindImageTexture(6, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelTexture"), 6);
+	glActiveTexture(GL_TEXTURE0 + 0);
+	//glBindImageTexture(6, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelTexture"), 0);
 
 	// Bind single level of texture to image unit so we can write to it from shaders
-	glBindImageTexture(7, voxelNormalTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelNormalTexture"), 7);
+	//glActiveTexture(GL_TEXTURE0 + 2);
+	//glBindImageTexture(0, voxelNormalTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+	//glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelNormalTexture"), 2);
 
 	model->DrawVoxels(*voxelizationShader, *camera_, depthViewProjectionMatrix_);
 
-	glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+	glActiveTexture(GL_TEXTURE0 + 0);
+	//glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
 	glGenerateMipmap(GL_TEXTURE_3D);
 
 	// Reset viewport
@@ -433,15 +522,16 @@ void Application::drawVoxels() {
 
 
 	if (doubleBounce) {
-		glActiveTexture(GL_TEXTURE0);
+		glActiveTexture(GL_TEXTURE0 + 7);
 		glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
-		glUniform1i(glGetUniformLocation(visualizeVoxelsShader->ID, "VoxelsTexture"), 0);
+		glUniform1i(glGetUniformLocation(visualizeVoxelsShader->ID, "VoxelsTexture"), 7);
 	}
 	if (!doubleBounce) {
-		glActiveTexture(GL_TEXTURE0);
+		glActiveTexture(GL_TEXTURE0 + 6);
 		glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
-		glUniform1i(glGetUniformLocation(visualizeVoxelsShader->ID, "VoxelsTexture"), 0);
+		glUniform1i(glGetUniformLocation(visualizeVoxelsShader->ID, "VoxelsTexture"), 6);
 	}
+
 
 	glBindVertexArray(visualizeVoxelsShader->ID);
 	glDrawArrays(GL_POINTS, 0, numVoxels);
@@ -451,7 +541,7 @@ void Application::drawVoxels() {
 }
 
 void Application::DebugInputs() {
-	bool newShadowMapNeeded = false;
+	newShadowMapNeeded = false;
 	if (glfwGetKey(window_, GLFW_KEY_ENTER) == GLFW_PRESS) {
 		showVoxels = true;
 		std::cout << "Voxel visualization on\n";
@@ -486,11 +576,11 @@ void Application::DebugInputs() {
 		press4_ = true;
 	}
 	if (glfwGetKey(window_, GLFW_KEY_0) == GLFW_PRESS) {
-		doubleBounce = true;
+		doubleBounce = false;
 		newShadowMapNeeded = true;
 	}
 	if (glfwGetKey(window_, GLFW_KEY_9) == GLFW_PRESS) {
-		doubleBounce = false;
+		doubleBounce = true;
 		newShadowMapNeeded = true;
 	}
 
@@ -529,10 +619,24 @@ void Application::DebugInputs() {
 		showShadowMap = false;
 	}
 	if (newShadowMapNeeded) {
+		modelMatrix = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(1)), glm::vec3(0.0f));
+		depthModelViewProjectionMatrix = depthViewProjectionMatrix_ * modelMatrix;
+
+
+		double startTime = glfwGetTime();
 		CreateShadowMap();
-		CreateVoxels();
+		std::cout << glfwGetTime() - startTime << "Time taken to create shadowmap \n";
+
+		startTime = glfwGetTime();
+		UpdateVoxels();
+		std::cout << glfwGetTime() - startTime << "Time taken to voxelize scene \n";
 		//CreateAdditionalBounces();
-		computeShaderTest();
+		//lightInjection();
+		startTime = glfwGetTime();
+		if (doubleBounce == true) {
+			computeShaderTest();
+		}
+		std::cout << glfwGetTime() - startTime << "Time taken to compute shader scene \n";
 		std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
 		std::cout << camera_->Orientation.x << " " << camera_->Orientation.y << " " << camera_->Orientation.z << " camera orientation \n";
 		std::cout << camera_->Position.x << " " << camera_->Position.y << " " << camera_->Position.z << " camera position \n";
