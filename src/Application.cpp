@@ -263,32 +263,32 @@ void Application::computeShaderTest() {
 	glm::mat4 viewMatrix = camera_->view;
 	glm::mat4 projectionMatrix = camera_->projection;
 
-	double startTime = glfwGetTime();
+	//double startTime = glfwGetTime();
 	glUseProgram(computeShader->ID);
-	std::cout << glfwGetTime() - startTime << " Time taken swapt to compute shader \n";
+	//std::cout << glfwGetTime() - startTime << " Time taken swapt to compute shader \n";
 	
-	startTime = glfwGetTime();
+	//startTime = glfwGetTime();
 	//glBindImageTexture(1, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "bounceTexture"), 1);
-	std::cout << glfwGetTime() - startTime << " Time taken to bind voxelTextureBounce to computeShader \n";
+	//std::cout << glfwGetTime() - startTime << " Time taken to bind voxelTextureBounce to computeShader \n";
 	//glBindImageTexture(1, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 	
-	startTime = glfwGetTime();
+	//startTime = glfwGetTime();
 	glActiveTexture(GL_TEXTURE0 + 0);
 	//glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelTexture"), 0);
-	std::cout << glfwGetTime() - startTime << " Time taken to send voxelTexture to computeShader \n";
+	//std::cout << glfwGetTime() - startTime << " Time taken to send voxelTexture to computeShader \n";
 
-	startTime = glfwGetTime();
+	//startTime = glfwGetTime();
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_3D, voxelNormalTexture_.textureID);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelNormalTexture"), 2);
-	std::cout << glfwGetTime() - startTime << " Time taken to send voxelNormalTexture to computeShader \n";
+	//std::cout << glfwGetTime() - startTime << " Time taken to send voxelNormalTexture to computeShader \n";
 
 	glUniform3f(glGetUniformLocation(computeShader->ID, "LightDirection"), lightDirection_.x, lightDirection_.y, lightDirection_.z);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelDimensions"), voxelTextureSize);
 
-	startTime = glfwGetTime();
+	//startTime = glfwGetTime();
 	glDispatchCompute(voxelTextureSize, voxelTextureSize, voxelTextureSize);
 
 	// Make sure all dispatches are completed.
@@ -297,7 +297,7 @@ void Application::computeShaderTest() {
 	glActiveTexture(GL_TEXTURE0 + 7);
 	//glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
 	glGenerateMipmap(GL_TEXTURE_3D);
-	std::cout << glfwGetTime() - startTime << " Time taken for compute shader and mip mapping them \n";
+	//std::cout << glfwGetTime() - startTime << " Time taken for compute shader and mip mapping them \n";
 
 	//glEndQuery(GL_TIME_ELAPSED);
 	//GLint64 elapsed_time;
@@ -623,21 +623,22 @@ void Application::DebugInputs() {
 		depthModelViewProjectionMatrix = depthViewProjectionMatrix_ * modelMatrix;
 
 
-		double startTime = glfwGetTime();
+		//double startTime = glfwGetTime();
 		CreateShadowMap();
-		std::cout << glfwGetTime() - startTime << "Time taken to create shadowmap \n";
+		//std::cout << glfwGetTime() - startTime << "Time taken to create shadowmap \n";
 
-		startTime = glfwGetTime();
+		//startTime = glfwGetTime();
 		UpdateVoxels();
-		std::cout << glfwGetTime() - startTime << "Time taken to voxelize scene \n";
+
+		//std::cout << glfwGetTime() - startTime << "Time taken to voxelize scene \n";
 		//CreateAdditionalBounces();
 		//lightInjection();
-		startTime = glfwGetTime();
+		//startTime = glfwGetTime();
 		if (doubleBounce == true) {
 			computeShaderTest();
 		}
-		std::cout << glfwGetTime() - startTime << "Time taken to compute shader scene \n";
-		std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
+		//std::cout << glfwGetTime() - startTime << "Time taken to compute shader scene \n";
+		//std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
 		std::cout << camera_->Orientation.x << " " << camera_->Orientation.y << " " << camera_->Orientation.z << " camera orientation \n";
 		std::cout << camera_->Position.x << " " << camera_->Position.y << " " << camera_->Position.z << " camera position \n";
 		newShadowMapNeeded = false;

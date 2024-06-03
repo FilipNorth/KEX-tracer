@@ -88,20 +88,22 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, vec3 startPos, out float occl
         float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
         float lodLevel = min(log2(diameter / voxelWorldSize), maxLOD); // where maxLOD is the maximum mipmap level
         vec4 voxelColor = sampleVoxels(startPos + dist * direction, lodLevel);
-        if(steps == 0 && voxelColor.a > 0.5){
+        if(steps == 0 && voxelColor.a > 0.8){
             return vec4(0, 0, 0, 0);
             occlusion = voxelColor.a;
         }
-       
-        // front-to-back compositing
+        
         float a = (1.0 - alpha);
+        // front-to-back compositing
         color += a * voxelColor.rgb * voxelColor.a;
         alpha += a * voxelColor.a;
         //occlusion += a * voxelColor.a;
         occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
         dist += diameter * 0.5; // smoother
+
         //dist += diameter; // faster but misses more voxels
         steps++;
+
     }
 
     return vec4(color, alpha);

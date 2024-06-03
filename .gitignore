@@ -3,7 +3,6 @@
 ################################################################################
 
 /.vs/
-/Models
 /x64/Debug/
 KEX-tracer.vcxproj
 /x64/Debug/vc143.pdb
@@ -54,3 +53,4 @@ KEX-tracer.vcxproj
 /out/build/x64-Debug/cmake_install.cmake
 /out/build/x64-Debug/VSInheritEnvironments.txt
 /out/build/x64-Release
+/Models/Sponza

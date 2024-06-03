@@ -150,8 +150,8 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, int specular, out float occlu
         steps++;
     }
 
-    if(dist >= MAX_DIST && specular == 1) {
-        return vec4(color, alpha) * 3; 
+    if(dist >= MAX_DIST && specular == 1 && alpha < 0.2) {
+        return vec4(color, alpha) * 2; 
     }
 
     return vec4(color, alpha);
@@ -225,7 +225,7 @@ void main() {
             // Indirect diffuse light
 	float occlusion = 0.0;
     vec3 indirectDiffuseLight = indirectLight(occlusion).rgb;
-    indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 4.0 * indirectDiffuseLight * roughness : vec3(0.0);
+    indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 2.0 * indirectDiffuseLight * roughness : vec3(0.0);
 
         // Sum direct and indirect diffuse light and tweak a little bit
         occlusion = min(1,  occlusion); // Make occlusion brighter
@@ -250,9 +250,9 @@ void main() {
         // Maybe fix so that the cone doesnt trace below the plane defined by the surface normal.
         // For example so that the floor doesnt reflect itself when looking at it with a small angle
         float specularOcclusion;
-        float angle = roughness; // Look into what constants to use. Roughness gives angle of specular cone
+        float angle = roughness / 4; // Look into what constants to use. Roughness gives angle of specular cone
         vec4 tracedSpecular = coneTrace(reflectDir, angle, 1,  specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-        specularReflection = ShowIndirectSpecular > 0.5 ? 0.3 *  tracedSpecular.rgb : vec3(0.0);
+        specularReflection = ShowIndirectSpecular > 0.5 ? 0.2 *  tracedSpecular.rgb : vec3(0.0);
     }
 
     color = vec4(diffuseReflection +  specularReflection, alpha);

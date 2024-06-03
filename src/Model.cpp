@@ -84,6 +84,20 @@ void Model::loadMesh(unsigned int indMesh) {
 
 	}
 
+	std::vector<glm::vec3> position = { glm::vec3(-10,10,-10) ,  glm::vec3(10,10,-10) , glm::vec3(10,10,10),  glm::vec3(-10,10,10)};
+	//{ 43.5, 7.5, -5, 44.5, 7.5, -5,44.5, 8.5, -5, 43.5, 8.5, -5 };
+
+	std::vector<glm::vec3> normal = { glm::vec3(0, -1, 0), glm::vec3(0, -1, 0),  glm::vec3(0, -1, 0) ,  glm::vec3(0, -1, 0) };
+	std::vector<glm::vec2> UV = { glm::vec2(0), glm::vec2(0, 1), glm::vec2(1), glm::vec2(-1, 1) };
+	std::vector<Vertex> MirrorVertices = assembleVertices(position, normal, UV);
+	
+	//{ 43.5, 7.5, -5, 44.5, 7.5, -5,44.5, 8.5, -5, 43.5, 8.5, -5};
+	Texture mirrorBasecolorTexture = Texture("../../../../Models/Mirror-Roughness-Black.jpg", "baseColorTexture", 0);
+	Texture mirrorRoughnessTexture = Texture("../../../../Models/Mirror-Roughness-Black.jpg", "metallicRoughnessTexture", 1);
+	std::vector<Texture> mirrorTextures = { mirrorBasecolorTexture, mirrorRoughnessTexture };
+	std::vector<GLuint> MirrorIndices = { 0, 1, 2, 0, 2, 3 };
+	//meshes.push_back(Mesh(MirrorVertices, MirrorIndices, mirrorTextures, 1));
+
 }
 
 
