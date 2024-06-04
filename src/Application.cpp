@@ -45,12 +45,14 @@ void Application::Initialize() {
 	/// Initialize Shadow Map ///
 	SetupShadowMap();
 
+	glEnable(GL_ARB_sparse_texture);
+	glEnable(GL_ARB_shader_storage_buffer_object);
 
 	/// Initialize 3D Textures ///
 	Initialize3DTextures(voxelTexture_, GL_RGBA8, GL_UNSIGNED_BYTE);
 	Initialize3DTextures(voxelTextureBounce_, GL_RGBA8, GL_UNSIGNED_BYTE);
 	Initialize3DTextures(voxelNormalTexture_, GL_RGBA16F, GL_FLOAT);
-
+	glDisable(GL_ARB_sparse_texture);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -292,7 +294,7 @@ void Application::computeShaderTest() {
 	glDispatchCompute(voxelTextureSize, voxelTextureSize, voxelTextureSize);
 
 	// Make sure all dispatches are completed.
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	
 	glActiveTexture(GL_TEXTURE0 + 7);
 	//glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
@@ -371,11 +373,19 @@ bool Application::Initialize3DTextures(Texture3D & Texture, GLint textureCoding,
 
 	glGenTextures(1, &Texture.textureID);
 	glBindTexture(GL_TEXTURE_3D, Texture.textureID);
+
+	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SPARSE_ARB, GL_TRUE);
+
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	// Fill 3D texture with empty values
 
+	//glTexStorage3D(GL_TEXTURE_3D, 5, textureCoding, Texture.size, Texture.size, Texture.size);
+	// Fill 3D texture with empty values
+	GLint xoffset = 0, yoffset = 0, zoffset = 0;
+
+	//glTexPageCommitmentARB(GL_TEXTURE_3D, 0, xoffset, yoffset, zoffset, Texture.size, Texture.size, Texture.size, GL_TRUE);
+	///*
 	size_t numVoxels = Texture.size * Texture.size * Texture.size;
 	if (dataType == GL_UNSIGNED_BYTE) {
 		GLubyte* data = new GLubyte[numVoxels * 4];
@@ -402,6 +412,7 @@ bool Application::Initialize3DTextures(Texture3D & Texture, GLint textureCoding,
 		return false;
 	}
 
+	//*/
 
 	glGenerateMipmap(GL_TEXTURE_3D);
 
@@ -453,6 +464,7 @@ void Application::CreateVoxels() {
 	//glBindImageTexture(0, voxelNormalTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "VoxelNormalTexture"), 2);
 
+
 	model->DrawVoxels(*voxelInitializaton, *camera_, depthViewProjectionMatrix_);
 
 	glActiveTexture(GL_TEXTURE0 + 0);
@@ -470,6 +482,10 @@ void Application::UpdateVoxels() {
 	glViewport(0, 0, voxelTexture_.size, voxelTexture_.size);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+	glEnable(GL_ARB_shader_image_load_store);
+	
 
 	glUseProgram(voxelizationShader->ID);
 
@@ -502,6 +518,8 @@ void Application::UpdateVoxels() {
 
 	// Reset viewport
 	glViewport(0, 0, windowWidth_, windowHeight_);
+
+	glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
 }
 
 // For debugging
@@ -639,8 +657,8 @@ void Application::DebugInputs() {
 		}
 		//std::cout << glfwGetTime() - startTime << "Time taken to compute shader scene \n";
 		//std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
-		std::cout << camera_->Orientation.x << " " << camera_->Orientation.y << " " << camera_->Orientation.z << " camera orientation \n";
-		std::cout << camera_->Position.x << " " << camera_->Position.y << " " << camera_->Position.z << " camera position \n";
+		//std::cout << camera_->Orientation.x << " " << camera_->Orientation.y << " " << camera_->Orientation.z << " camera orientation \n";
+		//std::cout << camera_->Position.x << " " << camera_->Position.y << " " << camera_->Position.z << " camera position \n";
 		newShadowMapNeeded = false;
 	}
 
@@ -664,4 +682,31 @@ void Application::showShadowMapDebug(GLuint textureID) {
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisableVertexAttribArray(0);
+}
+
+void Application::sparseTextureCommitment() {
+	GLuint ssbo;
+	glGenBuffers(1, &ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PageUsageInfo), nullptr, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo); // Binding to binding point 0
+
+	PageUsageInfo* info = (PageUsageInfo*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+
+	// Assuming PageUsageInfo is defined correctly elsewhere and voxelTexture_.size is divisible by 32
+	int pagesPerDimension = voxelTexture_.size / 32;
+	int totalPages = pagesPerDimension * pagesPerDimension * pagesPerDimension;
+
+	for (int i = 0; i < totalPages; i++) {
+		if (info->baseLevel[i] == 1) {
+			// Calculate the 3D page coordinates based on index
+			int z = i / (pagesPerDimension * pagesPerDimension);
+			int y = (i / pagesPerDimension) % pagesPerDimension;
+			int x = i % pagesPerDimension;
+			glTexPageCommitmentARB(GL_TEXTURE_3D, 0, x * 32, y * 32, z * 32, 32, 32, 32, GL_TRUE);
+		}
+	}
+
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
 }

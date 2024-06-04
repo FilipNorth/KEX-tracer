@@ -2,6 +2,8 @@
 
 #include "Camera.h"
 #include "Model.h"
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
 
 class Application
 {
@@ -33,7 +35,7 @@ public:
 
 	void computeShaderTest();
 
-
+	void sparseTextureCommitment();
 
 private:
 	int windowWidth_;
@@ -100,5 +102,14 @@ private:
 
 	double averageFPS;
 	double timeSinceStarted;
+
+	struct PageUsageInfo {
+		int baseLevel[512 * 512 * 512 / (32 * 32 * 32)];  // Adjust size based on your needs
+		int mipLevel1[256 * 256 * 256 / (32 * 32 * 32)];
+		int mipLevel2[128 * 128 * 128 / (32 * 32 * 32)];
+		int mipLevel3[64 * 64 * 64 / (32 * 32 * 32)];
+		int mipLevel4[32 * 32 * 32 / (32 * 32 * 32)];// Continue for each mip level needed
+		// Other mip levels as necessary
+	};
 };
 
