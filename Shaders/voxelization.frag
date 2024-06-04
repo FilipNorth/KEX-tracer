@@ -1,5 +1,6 @@
 #version 460 core
 #extension GL_ARB_shader_image_load_store : enable
+#extension GL_ARB_shader_storage_buffer_object : enable
 
 // Data from geometry shader
 in fData {
@@ -8,6 +9,10 @@ in fData {
     vec4 position_depth; // Position from the shadow map point of view
 	vec3 normal;
 } frag;
+
+layout(std430, binding = 1) buffer PageFlags {
+    uint flags[];
+};
 
 uniform layout(binding = 0, RGBA8) image3D VoxelTexture;
 //uniform layout(binding = 2, RGBA16F) image3D VoxelNormalTexture;
@@ -49,5 +54,10 @@ void main() {
 	// Required to avoid flickering when voxelizing every frame
     imageStore(VoxelTexture, texPos, vec4(materialColor.rgb * visibility, 1.0));
 	//imageStore(VoxelNormalTexture, texPos, vec4(frag.normal.x, frag.normal.y, frag.normal.z, roughness));
+	    // Calculate page index (assuming pages are 32x32x32 voxels)
+    int pageIndex = (texPos.z / 32) * (VoxelDimensions / 32) * (VoxelDimensions / 32) + 
+                    (texPos.y / 32) * (VoxelDimensions / 32) + 
+                    (texPos.x / 32);
+	flags[pageIndex] = 1;
 
 }
