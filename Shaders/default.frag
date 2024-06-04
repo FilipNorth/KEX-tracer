@@ -227,7 +227,7 @@ void main() {
             // Indirect diffuse light
 	float occlusion = 0.0;
     vec3 indirectDiffuseLight = indirectLight(occlusion).rgb;
-    indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 2.0 * indirectDiffuseLight * roughness : vec3(0.0);
+    indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 1.0 * indirectDiffuseLight * roughness : vec3(0.0);
 
         // Sum direct and indirect diffuse light and tweak a little bit
         occlusion = min(1,  occlusion); // Make occlusion brighter
@@ -239,7 +239,7 @@ void main() {
         
 
         //diffuseReflection = 2.0 * occlusion * (directDiffuseLight + indirectDiffuseLight * 0.7) * materialColor.rgb;
-        diffuseReflection = ( (2*  occlusion * indirectDiffuseLight)  +  (0.2*directDiffuseLight) ) * diffuseColor.rgb + 0.0 * materialColor.rgb;
+        diffuseReflection = ( (5*  occlusion * indirectDiffuseLight)  +  (0.3*directDiffuseLight) ) * diffuseColor.rgb + (0.01 * materialColor.rgb);
     }
         
 
@@ -250,12 +250,7 @@ void main() {
         vec3 reflectDir = normalize(reflect(-E, normalize(Normal_world)));
            // Direct specular highlights
 
-       float cosTheta = max(0, dot(reflectDir, normalize(L)));
-            vec3 directSpecularLight = ShowIndirectSpecular > 0.5 ? vec3(visibility * cosTheta) : vec3(0.0);
-
-        // Some specular textures are grayscale:
-        //specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
-        vec3 directSpecularLight = ShowIndirectSpecular > 0.5 ? vec3(visibility * cosTheta) : vec3(0.0);
+      
     
     // Direct specular highlights
             float cosTheta = max(0, dot(reflectDir, normalize(L)));
