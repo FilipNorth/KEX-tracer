@@ -22,6 +22,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwSwapInterval(0);
 
+
 	GLFWwindow* window = glfwCreateWindow(width, height, "KEX-tracer", NULL, NULL);
 	// Error check if the window fails to create
 	if (window == NULL)
@@ -35,6 +36,18 @@ int main()
 
 	//Load GLAD so it configures OpenGL
 	gladLoadGL();
+
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+		std::cerr << "Failed to initialize GLAD" << std::endl;
+	}
+
+
+	GLint numExtensions;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+	for (int i = 0; i < numExtensions; i++) {
+		const char* extension = (const char*)glGetStringi(GL_EXTENSIONS, i);
+		std::cout << i + 1 << ": " << extension << std::endl;
+	}
 
 	Application app(height, width, window);
 	app.Initialize();

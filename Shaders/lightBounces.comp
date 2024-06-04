@@ -1,6 +1,6 @@
 #version 460 core
-
-layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+#extension GL_ARB_shader_image_load_store : enable
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
 layout (binding = 2, rgba8) writeonly uniform image3D bounceTexture;
 layout (binding = 0) uniform sampler3D VoxelTexture;

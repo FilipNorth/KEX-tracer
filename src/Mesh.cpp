@@ -53,8 +53,8 @@ void Mesh::Draw
 	//glBindTexture(GL_TEXTURE_2D, 0);
 
 
-	shader.Activate();
-	VAO.Bind();
+	//shader.Activate();
+	//VAO.Bind();
 
 	// Take care of the camera Matrix
 	///glUniform3f(glGetUniformLocation(shader.ID, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
@@ -88,6 +88,9 @@ void Mesh::createShadowMap(Shader& shader, Camera& camera, glm::mat4& depthViewP
 	glm::mat4 modelMatrix = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(scale)), glm::vec3(0.0f)); // Should it be 0?
 	glm::mat4 modelViewProjectionMatrix = depthViewProjectionMatrix * modelMatrix;
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, "ModelViewProjectionMatrix"), 1, GL_FALSE, &modelViewProjectionMatrix[0][0]);
+
+	shader.Activate();
+	VAO.Bind();
 
 	Draw(shader, camera, modelMatrix); // Which one to use?
 }

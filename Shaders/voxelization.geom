@@ -1,7 +1,6 @@
 #version 460 core
-
 #define M_PI 3.1415926535897932384626433832795
-
+#extension  GL_NV_conservative_raster : enable
 layout (triangles) in; // glDrawArrays is set to triangles so that's what we're working with
 layout (triangle_strip, max_vertices = 3) out;
 
@@ -24,6 +23,9 @@ uniform mat4 ProjY;
 uniform mat4 ProjZ;
 
 void main() {
+    //use Conservative Rasterization
+    //gl_ConservativeRasterNV = true;
+
     vec3 p1 = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
     vec3 p2 = gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz;
     frag.normal = normalize(cross(p1,p2));
