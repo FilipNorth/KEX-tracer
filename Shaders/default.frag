@@ -240,7 +240,7 @@ void main() {
 
         //diffuseReflection = 2.0 * occlusion * (directDiffuseLight + indirectDiffuseLight * 0.7) * materialColor.rgb;
         //diffuseReflection = ( (2*  occlusion * indirectDiffuseLight)  +  (0.2*directDiffuseLight) ) * diffuseColor.rgb + 0.0 * materialColor.rgb;
-    }     diffuseReflection = ( (5*  occlusion * indirectDiffuseLight)  +  (0.5*directDiffuseLight) ) * diffuseColor.rgb + (0.2 * materialColor.rgb);
+    }     diffuseReflection = ( (5*  occlusion * indirectDiffuseLight)  +  (0.5*directDiffuseLight) ) * diffuseColor.rgb + (0.2 * materialColor.rgb); 
 
     // Calculate specular light
     vec3 specularReflection;

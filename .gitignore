@@ -80,3 +80,6 @@ KEX-tracer.vcxproj
 /out/build/x64-Debug/Libraries/lib/glfw/CMakeFiles/Export/b5f57140962b61d5074bd0b13bcab45b/glfwTargets.cmake
 /out/build/x64-Debug/Testing/Temporary/LastTest.log
 /out/build/x64-Debug/Libraries/lib/glfw/docs/Doxyfile
+/Shaders/default.frag
+/.gitignore
+/.gitignore
