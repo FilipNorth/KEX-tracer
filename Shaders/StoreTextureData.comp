@@ -1,0 +1,54 @@
+#version 460 core
+#extension GL_ARB_shader_image_load_store : enable
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+//layout (binding = 0, rgba8) uniform image3D baseTexture;
+layout (binding = 0, rgba8) uniform image3D mipTextures[5]; // Assuming 5 mipmap levels, adjust as needed
+
+shared vec4 sharedVoxels[8*8*8]; // Adjust size based on local_size_x, y, z
+
+uniform int VoxelDimensions;
+uniform int MipLevels;
+uniform int MipLevelDimensions[4];
+uniform int divisorOfMaxSize;
+uniform int currentLevel; // Pass the current mipmap level to work on
+
+uniform ivec3 DispatchOffset;
+
+
+
+void main() {
+    if (currentLevel >= MipLevels - 1) // Check to prevent out-of-bounds access
+        return;
+
+    ivec3 localIdx = ivec3(gl_LocalInvocationID.xyz);
+     // Global 3D index for the entire dispatch
+    ivec3 globalIdx = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 gid = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 lowResID = gid >> (currentLevel + 1);
+
+    // Linear index for accessing shared memory
+    int index = localIdx.x + localIdx.y * 8 + localIdx.z * 64;
+        // Load into shared memory
+    sharedVoxels[index] = imageLoad(mipTextures[currentLevel], gid);
+        // Synchronize to ensure all threads have written to shared memory
+    memoryBarrierShared();
+    barrier(); // Synchronize to ensure all loads are complete
+
+    vec4 sum = vec4(0.0);
+    for (int z = 0; z < 2; ++z)
+        for (int y = 0; y < 2; ++y)
+            for (int x = 0; x < 2; ++x)
+                sum += imageLoad(mipTextures[currentLevel], lowResID * 2 + ivec3(x, y, z));
+    sum /= 8.0;
+    //sum.x = sum.x + 0.5;
+    //sum *= 100;
+    //sum.a = sum.a * 0.001;
+    if(sum.a > 0.05){
+        imageStore(mipTextures[currentLevel + 1], lowResID, sum); // Safely store to next level
+    }
+    else {
+        //imageStore(mipTextures[currentLevel + 1], lowResID, vec4(0.0, 0.0, 0.0, 0.0)); // Safely store to next level
+    }
+
+}

@@ -1,19 +1,28 @@
 #version 460 core
 #extension GL_ARB_shader_image_load_store : enable
-layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
 layout (binding = 2, rgba8) writeonly uniform image3D bounceTexture;
 layout (binding = 0) uniform sampler3D VoxelTexture;
 layout (binding = 1) uniform sampler3D VoxelNormalTexture;
+
+
+layout(std430, binding = 4) buffer PageFlags {
+    uint flags[];
+};
+
+
 
 uniform vec3 LightDirection;
 uniform int VoxelDimensions;
 uniform sampler2DShadow ShadowMap;
 uniform mat4 DepthModelViewProjectionMatrix;
 
+uniform ivec3 DispatchOffset;
+
 const float MAX_DIST = 500.0;
 const float ALPHA_THRESH = 0.95;
-const int maxLOD = 7;
+const int maxLOD = 4;
 
 // 6 60 degree cone
 const int NUM_CONES = 6;
@@ -27,6 +36,7 @@ vec3 coneDirections[6] = vec3[]
                             );
 float coneWeights[6] = float[](0.25, 0.15, 0.15, 0.15, 0.15, 0.15);
 
+
 // // 5 90 degree cones
 // const int NUM_CONES = 5;
 // vec3 coneDirections[5] = vec3[]
@@ -38,12 +48,6 @@ float coneWeights[6] = float[](0.25, 0.15, 0.15, 0.15, 0.15, 0.15);
 //                             );
 // float coneWeights[5] = float[](0.28, 0.18, 0.18, 0.18, 0.18);
 
-vec2 poissonDisk[4] = vec2[](
-  vec2( -0.94201624, -0.39906216 ),
-  vec2( 0.94558609, -0.76890725 ),
-  vec2( -0.094184101, -0.92938870 ),
-  vec2( 0.34495938, 0.29387760 )
-);
 
 mat3 tangentToWorld;
 
@@ -80,7 +84,7 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, vec3 startPos, out float occl
     float voxelWorldSize = 1;
     float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
     //startPos = startPos + direction; // Start in the middle of the voxel
-    //startPos = Position_world + Normal_world * voxelWorldSize; // Plus move away slightly in the normal direction to avoid
+    //startPos = startPos + direction * voxelWorldSize; // Plus move away slightly in the normal direction to avoid
                                                                     // self occlusion in flat surfaces
     int steps = 0;
     while(dist < MAX_DIST && alpha < ALPHA_THRESH) {
@@ -89,8 +93,9 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, vec3 startPos, out float occl
         float lodLevel = min(log2(diameter / voxelWorldSize), maxLOD); // where maxLOD is the maximum mipmap level
         vec4 voxelColor = sampleVoxels(startPos + dist * direction, lodLevel);
         if(steps == 0 && voxelColor.a > 0.8){
-            return vec4(0, 0, 0, 0);
             occlusion = voxelColor.a;
+            return vec4(0, 0, 0, 0);
+            
         }
         
         float a = (1.0 - alpha);
@@ -99,7 +104,7 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, vec3 startPos, out float occl
         alpha += a * voxelColor.a;
         //occlusion += a * voxelColor.a;
         occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
-        dist += diameter * 0.5; // smoother
+        dist += diameter * 1; // smoother
 
         //dist += diameter; // faster but misses more voxels
         steps++;
@@ -135,8 +140,13 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 
 void main() {
     ivec3 writePos = ivec3(gl_GlobalInvocationID);
-    vec3 voxelPosition = writePos;
+   // int pageIndex = (writePos.z / 32) * (VoxelDimensions / 32) * (VoxelDimensions / 32) + (writePos.y / 32) * (VoxelDimensions / 32) + (writePos.x / 32);
 
+     //if(flags[pageIndex] == 0){
+        //imageStore(bounceTexture, writePos, vec4(1, 0, 0, 1));
+       // return;
+   // }
+    vec3 voxelPosition = writePos + DispatchOffset;
     // Fetch the position and depth of the current fragment
     vec4 voxel = texelFetch(VoxelTexture, writePos, 0);
 
@@ -179,5 +189,8 @@ void main() {
 	// Required to avoid flickering when voxelizing every frame
     
     imageStore(bounceTexture, writePos, vec4(indirectDiffuseLight * occlusion + voxel.rgb, voxel.a));
+    //imageAtomicCompSwap(bounceTexture, writePos, vec4(indirectDiffuseLight * occlusion + voxel.rgb, voxel.a));
+
+    //imageStore(bounceTexture, writePos, vec4(0, 1, 0, 1));
 
 }

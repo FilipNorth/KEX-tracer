@@ -34,8 +34,12 @@ public:
 	void showShadowMapDebug(GLuint textureID);
 
 	void computeShaderTest();
+	void VoxelMipMapper(Texture3D Texture, const GLchar* textureName);
 
-	void sparseTextureCommitment();
+	void sparseTextureCommitment(GLuint textureID);
+	void commitPagesForLevel(int mipLevel, int dimension, int* levelArray);
+	
+
 
 private:
 	int windowWidth_;
@@ -54,11 +58,13 @@ private:
 	Shader *computeShader;
 	Shader* lightInjectShader;
 	Shader* voxelInitializaton;
+	Shader* storeImageDataCompute;
 
 	Model *model;
 
 	//// Voxel Stuff
-	GLuint voxelTextureSize = 256;
+	GLuint voxelTextureSize = 512;
+	int mipLevels = 5;
 	glm::mat4 projX_, projY_, projZ_;
 	const float voxelGridWorldSize_ = 200.0f;
 	Texture3D voxelTexture_;
@@ -66,6 +72,7 @@ private:
 	Texture3D voxelNormalTexture_;
 	GLuint quadVertexArray_;
 	GLuint quadVBO_;
+	GLuint ssbo;
 
 
 	// // Shadow Map Stuff
@@ -103,6 +110,8 @@ private:
 	double averageFPS;
 	double timeSinceStarted;
 
+
+	int pageSize = 32;
 	struct PageUsageInfo {
 		int baseLevel[512 * 512 * 512 / (32 * 32 * 32)];  // Adjust size based on your needs
 		int mipLevel1[256 * 256 * 256 / (32 * 32 * 32)];
@@ -111,5 +120,25 @@ private:
 		int mipLevel4[32 * 32 * 32 / (32 * 32 * 32)];// Continue for each mip level needed
 		// Other mip levels as necessary
 	};
+
+	int dispatchSizeX = 0;
+	int dispatchSizeY = 0;
+	int dispatchSizeZ = 0;
+
+	std::vector<int> dispatchX;
+	std::vector<int> dispatchY;
+	std::vector<int> dispatchZ;
+
+	std::vector<int> sortedDispatchX;
+	std::vector<int> sortedDispatchY;
+	std::vector<int> sortedDispatchZ;
+	struct dispatchInfo {
+		int x;
+		int y;
+		int z;
+	};
+	std::vector<dispatchInfo> dispatchInfoList;
+
+	
 };
 
