@@ -64,7 +64,7 @@ private:
 
 	//// Voxel Stuff
 	GLuint voxelTextureSize = 512;
-	int mipLevels = 5;
+	int mipLevels = 4;
 	glm::mat4 projX_, projY_, projZ_;
 	const float voxelGridWorldSize_ = 200.0f;
 	Texture3D voxelTexture_;

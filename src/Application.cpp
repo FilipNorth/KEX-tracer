@@ -421,10 +421,10 @@ bool Application::Initialize3DTextures(Texture3D & Texture, GLint textureCoding,
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 4);  // Level 5 is your minimum
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL,5);  // Preventing generation of mipmaps below 16x16x16
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, mipLevels);  // Preventing generation of mipmaps below 16x16x16
 
 
-	glTexStorage3D(GL_TEXTURE_3D, 5, textureCoding, Texture.size, Texture.size, Texture.size);
+	glTexStorage3D(GL_TEXTURE_3D, mipLevels, textureCoding, Texture.size, Texture.size, Texture.size);
 
 	//glTexPageCommitmentARB(GL_TEXTURE_3D, 0, xoffset, yoffset, zoffset, Texture.size, Texture.size, Texture.size, GL_TRUE);
 	/*
@@ -864,12 +864,12 @@ void Application::VoxelMipMapper(Texture3D Texture, const GLchar* textureName) {
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PageUsageInfo), nullptr, GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo); // Binding to binding point 0
 
-	for (int level = 1; level < mipLevels; level++) {
-		int levelSize = std::max(1, int(voxelTextureSize) >> level);
+	for (int level = 1; level <= mipLevels; level++) {
+		int levelSize = int(voxelTextureSize) >> level;
 		glUniform1i(glGetUniformLocation(storeImageDataCompute->ID, "currentLevel"), level - 1);
-		glDispatchCompute(std::max(1, levelSize), std::max(1, levelSize), std::max(1, levelSize));
+		glDispatchCompute(levelSize, levelSize, levelSize);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 }

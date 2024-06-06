@@ -9,7 +9,7 @@ shared vec4 sharedVoxels[8*8*8]; // Adjust size based on local_size_x, y, z
 
 uniform int VoxelDimensions;
 uniform int MipLevels;
-uniform int MipLevelDimensions[4];
+uniform int MipLevelDimensions[5];
 uniform int divisorOfMaxSize;
 uniform int currentLevel; // Pass the current mipmap level to work on
 
@@ -18,37 +18,33 @@ uniform ivec3 DispatchOffset;
 
 
 void main() {
-    if (currentLevel >= MipLevels - 1) // Check to prevent out-of-bounds access
-        return;
-
     ivec3 localIdx = ivec3(gl_LocalInvocationID.xyz);
-     // Global 3D index for the entire dispatch
     ivec3 globalIdx = ivec3(gl_GlobalInvocationID.xyz);
-    ivec3 gid = ivec3(gl_GlobalInvocationID.xyz);
-    ivec3 lowResID = gid >> (currentLevel + 1);
+    ivec3 lowResID = globalIdx >> 1;  // Compute low-resolution index for the next level mipmap
 
-    // Linear index for accessing shared memory
-    int index = localIdx.x + localIdx.y * 8 + localIdx.z * 64;
-        // Load into shared memory
-    sharedVoxels[index] = imageLoad(mipTextures[currentLevel], gid);
-        // Synchronize to ensure all threads have written to shared memory
+    int flatIndex = localIdx.x + (localIdx.y * 8) + (localIdx.z * 64);  // Flatten the local index for shared memory access
+
+    // Load voxel data into shared memory from the current mipmap level
+    sharedVoxels[flatIndex] = imageLoad(mipTextures[currentLevel], globalIdx);
     memoryBarrierShared();
-    barrier(); // Synchronize to ensure all loads are complete
+    barrier();
 
-    vec4 sum = vec4(0.0);
-    for (int z = 0; z < 2; ++z)
-        for (int y = 0; y < 2; ++y)
-            for (int x = 0; x < 2; ++x)
-                sum += imageLoad(mipTextures[currentLevel], lowResID * 2 + ivec3(x, y, z));
-    sum /= 8.0;
-    //sum.x = sum.x + 0.5;
-    //sum *= 100;
-    //sum.a = sum.a * 0.001;
-    if(sum.a > 0.05){
-        imageStore(mipTextures[currentLevel + 1], lowResID, sum); // Safely store to next level
-    }
-    else {
-        //imageStore(mipTextures[currentLevel + 1], lowResID, vec4(0.0, 0.0, 0.0, 0.0)); // Safely store to next level
-    }
+    // Ensure only threads that correspond to reducing 2x2x2 blocks execute the averaging
+    if (localIdx.x % 2 == 0 && localIdx.y % 2 == 0 && localIdx.z % 2 == 0) {
+        vec4 sum = vec4(0.0);
+        for (int z = 0; z < 2; z++) {
+            for (int y = 0; y < 2; y++) {
+                for (int x = 0; x < 2; x++) {
+                    int idx = (localIdx.x + x) + ((localIdx.y + y) * 8) + ((localIdx.z + z) * 64);
+                    sum += sharedVoxels[idx];
+                }
+            }
+        }
+        sum /= 8.0;
 
+        // Store the computed average to the next level mipmap
+        if (sum.a > 0.05) {  // Store only if alpha is greater than a threshold (to handle sparse data)
+            imageStore(mipTextures[currentLevel + 1], lowResID, sum);
+        }
+    }
 }
