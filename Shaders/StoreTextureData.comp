@@ -5,7 +5,7 @@ layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 //layout (binding = 0, rgba8) uniform image3D baseTexture;
 layout (binding = 0, rgba8) uniform image3D mipTextures[5]; // Assuming 5 mipmap levels, adjust as needed
 
-shared vec4 sharedVoxels[8*8*8]; // Adjust size based on local_size_x, y, z
+shared vec4 sharedVoxels[300]; // Adjust size based on local_size_x, y, z
 
 uniform int VoxelDimensions;
 uniform int MipLevels;
@@ -37,6 +37,8 @@ void main() {
                 for (int x = 0; x < 2; x++) {
                     int idx = (localIdx.x + x) + ((localIdx.y + y) * 8) + ((localIdx.z + z) * 64);
                     sum += sharedVoxels[idx];
+                    //sum += imageLoad(mipTextures[currentLevel], globalIdx + ivec3(x, y, z));
+
                 }
             }
         }

@@ -160,9 +160,9 @@ void Application::Initialize() {
 
 	Draw();
 
-	sparseTextureCommitment(voxelTexture_.textureID);
-	sparseTextureCommitment(voxelNormalTexture_.textureID);
-	sparseTextureCommitment(voxelTextureBounce_.textureID);
+	//sparseTextureCommitment(voxelTexture_.textureID);
+	//sparseTextureCommitment(voxelNormalTexture_.textureID);
+	//sparseTextureCommitment(voxelTextureBounce_.textureID);
 
 	CreateVoxels();
 
@@ -416,7 +416,7 @@ bool Application::Initialize3DTextures(Texture3D & Texture, GLint textureCoding,
 	glGenTextures(1, &Texture.textureID);
 	glBindTexture(GL_TEXTURE_3D, Texture.textureID);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SPARSE_ARB, GL_TRUE);
+	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_SPARSE_ARB, GL_TRUE);
 
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

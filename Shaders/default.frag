@@ -54,7 +54,7 @@ const float ALPHA_THRESH = 0.95;
 
 const int DIFFUSE_CONE_COUNT = 16;
 const float DIFFUSE_CONE_APERTURE = 0.872665;
-const int maxLOD = 4;
+const int maxLOD = 6;
 
 // const int NUM_CONES = 16;
 // const vec3 coneDirections[16] = {
@@ -260,7 +260,8 @@ void main() {
     //indirect specular light
         // For example so that the floor doesnt reflect itself when looking at it with a small angle
         float specularOcclusion;
-        float angle = roughness; // Look into what constants to use. Roughness gives angle of specular cone
+        float angle = roughness / 4; // Look into what constants to use. Roughness gives angle of specular cone
+        //angle = 0.9;
         vec4 tracedSpecular = coneTrace(reflectDir, angle, 1,  specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
         specularOcclusion = 1.0 - specularOcclusion;
         //specularReflection = ShowIndirectSpecular > 0.5 ? 0.2 *  tracedSpecular.rgb : vec3(0.0);
