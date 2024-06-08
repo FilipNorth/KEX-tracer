@@ -290,22 +290,25 @@ void Application::computeShaderTest() {
 	//double startTime = glfwGetTime();
 	glUseProgram(computeShader->ID);
 
-	// Bind bounce texture as image for writing
 	glBindImageTexture(1, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "bounceTexture"), 1);
+	//glBindImageTexture(1, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 
-	// Bind voxel texture for reading
-	glActiveTexture(GL_TEXTURE0);
+
+	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelTexture"), 0);
 
-	// Bind normal texture for reading
-	glActiveTexture(GL_TEXTURE1);
+
+
+	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_3D, voxelNormalTexture_.textureID);
-	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelNormalTexture"), 1);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelNormalTexture"), 2);
 	//std::cout << glfwGetTime() - startTime << " Time taken to send voxelNormalTexture to computeShader \n";
 
 	glUniform3f(glGetUniformLocation(computeShader->ID, "LightDirection"), lightDirection_.x, lightDirection_.y, lightDirection_.z);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelDimensions"), voxelTextureSize);
+	glUniform1f(glGetUniformLocation(computeShader->ID, "VoxelGridWorldSize"), voxelGridWorldSize_);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PageUsageInfo), nullptr, GL_DYNAMIC_DRAW);
@@ -356,7 +359,7 @@ bool Application::SetupShadowMap() {
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFramebuffer_);
 
 	// Depth texture
-	depthTexture_.width = depthTexture_.height = 4096 * 4;
+	depthTexture_.width = depthTexture_.height = 2048;
 
 	viewMatrix = glm::lookAt(lightDirection_, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	projectionMatrix = glm::ortho	<float>(-120, 120, -120, 120, -500, 500);
@@ -814,7 +817,7 @@ void Application::commitPagesForLevel(int mipLevel, int dimension, int* levelArr
 	int pagesPerDimension = dimension / pageSize;
 	int totalPages = pagesPerDimension * pagesPerDimension * pagesPerDimension;
 	for (int i = 0; i < totalPages; i++) {
-		if (levelArray[i] == 0 && mipLevel == 0) {
+		if (levelArray[i] == 0) {
 			continue;
 		}
 		int z = i / (pagesPerDimension * pagesPerDimension);

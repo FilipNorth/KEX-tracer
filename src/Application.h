@@ -112,6 +112,9 @@ private:
 
 
 	int pageSize = 32;
+	
+	
+	// 512x512x512
 	struct PageUsageInfo {
 		int baseLevel[512 * 512 * 512 / (32 * 32 * 32)];  // Adjust size based on your needs
 		int mipLevel1[256 * 256 * 256 / (32 * 32 * 32)];
@@ -120,6 +123,32 @@ private:
 		int mipLevel4[32 * 32 * 32 / (32 * 32 * 32)];// Continue for each mip level needed
 		// Other mip levels as necessary
 	};
+	
+	/*
+	
+	// 256x256x256
+	struct PageUsageInfo {
+		int baseLevel[256 * 256 * 256 / (32 * 32 * 32)];  // Adjust size based on your needs
+		int mipLevel1[128 * 128 * 128 / (32 * 32 * 32)];
+		int mipLevel2[64 * 64 * 64 / (32 * 32 * 32)];
+		int mipLevel3[32 * 32 * 32 / (32 * 32 * 32)];
+		int mipLevel4[32 * 32 * 32 / (32 * 32 * 32)];// Continue for each mip level needed
+		// Other mip levels as necessary
+	};
+	*/
+	
+	// 128x128x128
+	/*
+	struct PageUsageInfo {
+		int baseLevel[128 * 128 * 128 / (32 * 32 * 32)];  // Adjust size based on your needs
+		int mipLevel1[64 * 64 * 64 / (32 * 32 * 32)];
+		int mipLevel2[32 * 32 * 32 / (32 * 32 * 32)];
+		int mipLevel3[32 * 32 * 32 / (32 * 32 * 32)];
+		int mipLevel4[32 * 32 * 32 / (32 * 32 * 32)];// Continue for each mip level needed
+		// Other mip levels as necessary
+	};
+	
+	*/
 
 	int dispatchSizeX = 0;
 	int dispatchSizeY = 0;

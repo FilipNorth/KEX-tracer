@@ -51,7 +51,7 @@ void main() {
 	// TODO: Atomic operations to get an averaged value, described in OpenGL insights about voxelization
 	// Required to avoid flickering when voxelizing every frame
     
-	imageStore(VoxelTexture, texPos, vec4(materialColor.rgb * visibility * 2, 1.0));
+	imageStore(VoxelTexture, texPos, vec4(materialColor.rgb * visibility, 1.0));
 	
 	
 	//imageStore(VoxelNormalTexture, texPos, vec4(frag.normal.x, frag.normal.y, frag.normal.z, roughness));
