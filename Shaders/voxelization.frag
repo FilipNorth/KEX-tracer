@@ -10,7 +10,7 @@ in fData {
 	vec3 normal;
 } frag;
 
-layout(std430, binding = 1) buffer PageFlags {
+layout(std430, binding = 4) buffer PageFlags {
     uint flags[];
 };
 
@@ -23,6 +23,7 @@ uniform sampler2DShadow ShadowMap;
 uniform int VoxelDimensions;
 
 void main() {
+
     vec4 materialColor = texture(diffuse, frag.UV);
 
     // Do shadow map lookup here
@@ -46,18 +47,14 @@ void main() {
 
 	// Flip it!
 	texPos.z = VoxelDimensions - texPos.z - 1;
-
-	vec4 metallicRoughnessColor = texture(metallicRoughnessTexture, frag.UV);
-    float roughness = metallicRoughnessColor.g;
 	// Overwrite currently stored value.
 	// TODO: Atomic operations to get an averaged value, described in OpenGL insights about voxelization
 	// Required to avoid flickering when voxelizing every frame
-    imageStore(VoxelTexture, texPos, vec4(materialColor.rgb * visibility, 1.0));
+    
+	imageStore(VoxelTexture, texPos, vec4(materialColor.rgb * visibility, 1.0));
+	
+	
 	//imageStore(VoxelNormalTexture, texPos, vec4(frag.normal.x, frag.normal.y, frag.normal.z, roughness));
 	    // Calculate page index (assuming pages are 32x32x32 voxels)
-    int pageIndex = (texPos.z / 32) * (VoxelDimensions / 32) * (VoxelDimensions / 32) + 
-                    (texPos.y / 32) * (VoxelDimensions / 32) + 
-                    (texPos.x / 32);
-	flags[pageIndex] = 1;
 
 }

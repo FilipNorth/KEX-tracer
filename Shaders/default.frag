@@ -1,5 +1,5 @@
 #version 460 core
-
+#extension GL_ARB_shader_image_load_store : enable
 // Interpolated values from the vertex shaders
 in vec2 UV;
 in vec3 Position_world;
@@ -54,7 +54,7 @@ const float ALPHA_THRESH = 0.95;
 
 const int DIFFUSE_CONE_COUNT = 16;
 const float DIFFUSE_CONE_APERTURE = 0.872665;
-
+const int maxLOD = 6;
 
 // const int NUM_CONES = 16;
 // const vec3 coneDirections[16] = {
@@ -133,7 +133,7 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, int specular, out float occlu
     while(dist < MAX_DIST && alpha < ALPHA_THRESH) {
         // smallest sample diameter possible is the voxel size
         float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
-        float lodLevel = log2(diameter / voxelWorldSize);
+        float lodLevel = min(log2(diameter / voxelWorldSize), maxLOD); // where maxLOD is the maximum mipmap level
         vec4 voxelColor = sampleVoxels(startPos + dist * direction, lodLevel);
 
         if(steps == 0){
@@ -261,6 +261,7 @@ void main() {
         // For example so that the floor doesnt reflect itself when looking at it with a small angle
         float specularOcclusion;
         float angle = roughness / 4; // Look into what constants to use. Roughness gives angle of specular cone
+        //angle = 0.9;
         vec4 tracedSpecular = coneTrace(reflectDir, angle, 1,  specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
         specularOcclusion = 1.0 - specularOcclusion;
         //specularReflection = ShowIndirectSpecular > 0.5 ? 0.2 *  tracedSpecular.rgb : vec3(0.0);

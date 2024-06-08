@@ -33,6 +33,7 @@ void Application::Initialize() {
 	lightInjectShader = new Shader("../../../../Shaders/default.vert", "../../../../Shaders/directLightVoxel.frag");
 
 	computeShader = new Shader("../../../../Shaders/lightBounces.comp");
+	storeImageDataCompute = new Shader("../../../../Shaders/StoreTextureData.comp");
 	
 	// Load model
 	std::cout << "Loading model" << "\n";
@@ -45,14 +46,16 @@ void Application::Initialize() {
 	/// Initialize Shadow Map ///
 	SetupShadowMap();
 
-	glEnable(GL_ARB_sparse_texture);
+	//glEnable(GL_ARB_sparse_texture);
 	glEnable(GL_ARB_shader_storage_buffer_object);
+	glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+	glEnable(GL_ARB_shader_image_load_store);
 
 	/// Initialize 3D Textures ///
 	Initialize3DTextures(voxelTexture_, GL_RGBA8, GL_UNSIGNED_BYTE);
 	Initialize3DTextures(voxelTextureBounce_, GL_RGBA8, GL_UNSIGNED_BYTE);
 	Initialize3DTextures(voxelNormalTexture_, GL_RGBA16F, GL_FLOAT);
-	glDisable(GL_ARB_sparse_texture);
+	//glDisable(GL_ARB_sparse_texture);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -153,8 +156,22 @@ void Application::Initialize() {
 	CreateVoxels();
 	std::cout << glfwGetTime() - startTime << " Time taken to create voxels \n";
 
+	UpdateVoxels();
+
+	Draw();
+
+	//sparseTextureCommitment(voxelTexture_.textureID);
+	//sparseTextureCommitment(voxelNormalTexture_.textureID);
+	//sparseTextureCommitment(voxelTextureBounce_.textureID);
+
+	CreateVoxels();
+
+	UpdateVoxels();
+
 	startTime = glfwGetTime();
 	computeShaderTest();
+
+	//glGenerateMipmap(GL_TEXTURE_3D);
 	std::cout << glfwGetTime() - startTime << " Time taken to create first bounce \n";
 }
 
@@ -265,23 +282,25 @@ void Application::computeShaderTest() {
 	glm::mat4 viewMatrix = camera_->view;
 	glm::mat4 projectionMatrix = camera_->projection;
 
+	//glEnable(GL_ARB_sparse_texture);
+	glEnable(GL_ARB_shader_image_load_store);
+
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
 	//double startTime = glfwGetTime();
 	glUseProgram(computeShader->ID);
-	//std::cout << glfwGetTime() - startTime << " Time taken swapt to compute shader \n";
-	
-	//startTime = glfwGetTime();
-	//glBindImageTexture(1, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-	glUniform1i(glGetUniformLocation(computeShader->ID, "bounceTexture"), 1);
-	//std::cout << glfwGetTime() - startTime << " Time taken to bind voxelTextureBounce to computeShader \n";
-	//glBindImageTexture(1, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-	
-	//startTime = glfwGetTime();
-	glActiveTexture(GL_TEXTURE0 + 0);
-	//glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
-	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelTexture"), 0);
-	//std::cout << glfwGetTime() - startTime << " Time taken to send voxelTexture to computeShader \n";
 
-	//startTime = glfwGetTime();
+	glBindImageTexture(1, voxelTextureBounce_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "bounceTexture"), 1);
+	//glBindImageTexture(1, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
+	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelTexture"), 0);
+
+
+
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_3D, voxelNormalTexture_.textureID);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelNormalTexture"), 2);
@@ -289,16 +308,42 @@ void Application::computeShaderTest() {
 
 	glUniform3f(glGetUniformLocation(computeShader->ID, "LightDirection"), lightDirection_.x, lightDirection_.y, lightDirection_.z);
 	glUniform1i(glGetUniformLocation(computeShader->ID, "VoxelDimensions"), voxelTextureSize);
+	glUniform1f(glGetUniformLocation(computeShader->ID, "VoxelGridWorldSize"), voxelGridWorldSize_);
 
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PageUsageInfo), nullptr, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo); // Binding to binding point 0
 	//startTime = glfwGetTime();
+	
+	//for (int i = 0; i < sortedDispatchX.size(); i++) {
+	//	for(int j = 0; j < sortedDispatchY.size(); j++){
+	//		for(int k = 0; k < sortedDispatchZ.size(); k++){
+	//				//std::cout << "Dispatching " << i << " " << j << " " << k << "\n";
+	//			glm::ivec3 offset = glm::ivec3(sortedDispatchX[i], sortedDispatchY[j], sortedDispatchZ[k]);
+	//
+	//			glUniform3f(glGetUniformLocation(computeShader->ID, "DispatchOffset"), offset.x * 32, offset.y * 32, offset.z * 32);
+	//			glDispatchCompute(32, 32, 32);
+	//
+	//		}
+	//	}
+	//
+	//}
+
+	///for(int i = 0; i < dispatchInfoList.size(); i++){
+	//	glUniform3f(glGetUniformLocation(computeShader->ID, "DispatchOffset"), dispatchInfoList[i].x * 32, dispatchInfoList[i].y * 32, dispatchInfoList[i].z * 32);
+	//	glDispatchCompute(32, 32, 32);
+	//}
+	
 	glDispatchCompute(voxelTextureSize, voxelTextureSize, voxelTextureSize);
 
 	// Make sure all dispatches are completed.
-	//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	
-	glActiveTexture(GL_TEXTURE0 + 7);
+	//glActiveTexture(GL_TEXTURE0 + 7);
 	//glBindTexture(GL_TEXTURE_3D, voxelTextureBounce_.textureID);
-	glGenerateMipmap(GL_TEXTURE_3D);
+
+	VoxelMipMapper(voxelTextureBounce_, "bounceTexture");
+	//glGenerateMipmap(GL_TEXTURE_3D);
 	//std::cout << glfwGetTime() - startTime << " Time taken for compute shader and mip mapping them \n";
 
 	//glEndQuery(GL_TIME_ELAPSED);
@@ -314,7 +359,7 @@ bool Application::SetupShadowMap() {
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFramebuffer_);
 
 	// Depth texture
-	depthTexture_.width = depthTexture_.height = 4096 * 4;
+	depthTexture_.width = depthTexture_.height = 2048;
 
 	viewMatrix = glm::lookAt(lightDirection_, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	projectionMatrix = glm::ortho	<float>(-120, 120, -120, 120, -500, 500);
@@ -325,8 +370,8 @@ bool Application::SetupShadowMap() {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, depthTexture_.width, depthTexture_.height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
@@ -378,14 +423,14 @@ bool Application::Initialize3DTextures(Texture3D & Texture, GLint textureCoding,
 
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 4);  // Level 5 is your minimum
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, mipLevels);  // Preventing generation of mipmaps below 16x16x16
 
 
-	//glTexStorage3D(GL_TEXTURE_3D, 5, textureCoding, Texture.size, Texture.size, Texture.size);
-	// Fill 3D texture with empty values
-	GLint xoffset = 0, yoffset = 0, zoffset = 0;
+	glTexStorage3D(GL_TEXTURE_3D, mipLevels, textureCoding, Texture.size, Texture.size, Texture.size);
 
 	//glTexPageCommitmentARB(GL_TEXTURE_3D, 0, xoffset, yoffset, zoffset, Texture.size, Texture.size, Texture.size, GL_TRUE);
-	///*
+	/*
 	size_t numVoxels = Texture.size * Texture.size * Texture.size;
 	if (dataType == GL_UNSIGNED_BYTE) {
 		GLubyte* data = new GLubyte[numVoxels * 4];
@@ -412,9 +457,9 @@ bool Application::Initialize3DTextures(Texture3D & Texture, GLint textureCoding,
 		return false;
 	}
 
-	//*/
+	*/
 
-	glGenerateMipmap(GL_TEXTURE_3D);
+	//glGenerateMipmap(GL_TEXTURE_3D);
 
 	// Create projection matrices used to project stuff onto each axis in the voxelization step
 	float size = voxelGridWorldSize_;
@@ -443,6 +488,11 @@ void Application::CreateVoxels() {
 
 	glUseProgram(voxelInitializaton->ID);
 
+	glGenBuffers(1, &ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PageUsageInfo), nullptr, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo); // Binding to binding point 0
+
 	// Set uniforms
 	glUniform1i(glGetUniformLocation(voxelInitializaton->ID, "VoxelDimensions"), voxelTexture_.size);
 	glUniformMatrix4fv(glGetUniformLocation(voxelInitializaton->ID, "ProjX"), 1, GL_FALSE, &projX_[0][0]);
@@ -467,9 +517,11 @@ void Application::CreateVoxels() {
 
 	model->DrawVoxels(*voxelInitializaton, *camera_, depthViewProjectionMatrix_);
 
+	//sparseTextureCommitment();
+
 	glActiveTexture(GL_TEXTURE0 + 0);
 	//glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
-	glGenerateMipmap(GL_TEXTURE_3D);
+	//glGenerateMipmap(GL_TEXTURE_3D);
 
 	// Reset viewport
 	glViewport(0, 0, windowWidth_, windowHeight_);
@@ -485,42 +537,36 @@ void Application::UpdateVoxels() {
 
 	glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
 	glEnable(GL_ARB_shader_image_load_store);
-	
+	glEnable(GL_ARB_shader_storage_buffer_object);
 
 	glUseProgram(voxelizationShader->ID);
 
-	// Set uniforms
+	// Uniform setup
 	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelDimensions"), voxelTexture_.size);
 	glUniformMatrix4fv(glGetUniformLocation(voxelizationShader->ID, "ProjX"), 1, GL_FALSE, &projX_[0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(voxelizationShader->ID, "ProjY"), 1, GL_FALSE, &projY_[0][0]);
 	glUniformMatrix4fv(glGetUniformLocation(voxelizationShader->ID, "ProjZ"), 1, GL_FALSE, &projZ_[0][0]);
 
 	// Bind depth texture
-	glActiveTexture(GL_TEXTURE0 + 5);
+	glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D, depthTexture_.textureID);
 	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "ShadowMap"), 5);
 
-	// Bind single level of texture to image unit so we can write to it from shaders
-	glActiveTexture(GL_TEXTURE0 + 0);
-	//glBindImageTexture(6, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+	// Bind voxel texture as image for writing
+	glBindImageTexture(0, voxelTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 	glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelTexture"), 0);
-
-	// Bind single level of texture to image unit so we can write to it from shaders
-	//glActiveTexture(GL_TEXTURE0 + 2);
-	//glBindImageTexture(0, voxelNormalTexture_.textureID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-	//glUniform1i(glGetUniformLocation(voxelizationShader->ID, "VoxelNormalTexture"), 2);
 
 	model->DrawVoxels(*voxelizationShader, *camera_, depthViewProjectionMatrix_);
 
-	glActiveTexture(GL_TEXTURE0 + 0);
-	//glBindTexture(GL_TEXTURE_3D, voxelTexture_.textureID);
-	glGenerateMipmap(GL_TEXTURE_3D);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 	// Reset viewport
 	glViewport(0, 0, windowWidth_, windowHeight_);
 
 	glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
+	VoxelMipMapper(voxelTexture_, "VoxelTexture");
 }
+
 
 // For debugging
 void Application::drawVoxels() {
@@ -645,7 +691,7 @@ void Application::DebugInputs() {
 		CreateShadowMap();
 		//std::cout << glfwGetTime() - startTime << "Time taken to create shadowmap \n";
 
-		//startTime = glfwGetTime();
+		//double startTime = glfwGetTime();
 		UpdateVoxels();
 
 		//std::cout << glfwGetTime() - startTime << "Time taken to voxelize scene \n";
@@ -653,7 +699,9 @@ void Application::DebugInputs() {
 		//lightInjection();
 		//startTime = glfwGetTime();
 		if (doubleBounce == true) {
+			//startTime = glfwGetTime();
 			computeShaderTest();
+			//std::cout << glfwGetTime() - startTime << "Time taken to compute shader scene" << "\n";
 		}
 		//std::cout << glfwGetTime() - startTime << "Time taken to compute shader scene \n";
 		//std::cout << "New light direction: " << lightDirection_.x << " " << lightDirection_.y << " " << lightDirection_.z << "\n";
@@ -684,29 +732,147 @@ void Application::showShadowMapDebug(GLuint textureID) {
 	glDisableVertexAttribArray(0);
 }
 
-void Application::sparseTextureCommitment() {
-	GLuint ssbo;
-	glGenBuffers(1, &ssbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PageUsageInfo), nullptr, GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo); // Binding to binding point 0
+void Application::sparseTextureCommitment(GLuint textureID) {
+	glBindTexture(GL_TEXTURE_3D, textureID);
 
 	PageUsageInfo* info = (PageUsageInfo*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+	if (!info) {
+		std::cerr << "Failed to map buffer." << std::endl;
+		return;
+	}
 
-	// Assuming PageUsageInfo is defined correctly elsewhere and voxelTexture_.size is divisible by 32
-	int pagesPerDimension = voxelTexture_.size / 32;
-	int totalPages = pagesPerDimension * pagesPerDimension * pagesPerDimension;
-
-	for (int i = 0; i < totalPages; i++) {
+	for (int i = 0; i < voxelTexture_.size * 8; i++) {
 		if (info->baseLevel[i] == 1) {
-			// Calculate the 3D page coordinates based on index
-			int z = i / (pagesPerDimension * pagesPerDimension);
-			int y = (i / pagesPerDimension) % pagesPerDimension;
-			int x = i % pagesPerDimension;
-			glTexPageCommitmentARB(GL_TEXTURE_3D, 0, x * 32, y * 32, z * 32, 32, 32, 32, GL_TRUE);
+			info->mipLevel1[i / (8)] = 1;
+			info->mipLevel2[i / (8*8)] = 1;
+			info->mipLevel3[i / (8*8*8)] = 1;
+			info->mipLevel4[i / (8*8*8*8)] = 1;
 		}
+
+	}
+
+	dispatchX.resize(voxelTexture_.size / pageSize);
+	dispatchY.resize(voxelTexture_.size / pageSize);
+	dispatchZ.resize(voxelTexture_.size / pageSize);
+	// Commit pages for the base level
+	int baseDimension = voxelTexture_.size;
+	commitPagesForLevel(0, baseDimension, info->baseLevel);
+
+	// Automatically determine the number of mip levels (assuming mip levels halve the dimensions each step)
+	int level = 1;
+	int currentDimension = baseDimension / 2;
+
+	while (currentDimension >= pageSize) {  // Continue until the dimension is too small
+		int pagesPerDimension = currentDimension / pageSize;
+		int totalPages = pagesPerDimension * pagesPerDimension * pagesPerDimension;
+		int* currentLevelFlags = nullptr;
+
+		switch (level) {
+		case 1: currentLevelFlags = info->mipLevel1; break;
+		case 2: currentLevelFlags = info->mipLevel2; break;
+		case 3: currentLevelFlags = info->mipLevel3; break;
+		case 4: currentLevelFlags = info->mipLevel4; break;
+		default: break;  // Add more cases if there are more mip levels
+		}
+
+		if (currentLevelFlags) {
+			commitPagesForLevel(level, currentDimension, currentLevelFlags);
+		}
+
+		currentDimension /= 2;
+		level++;
 	}
 
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+	for(int i = 0; i < dispatchX.size(); i++) {
+		if(dispatchX[i] == 1) {
+			dispatchSizeX++;
+			sortedDispatchX.push_back(i);
+		}
+		if(dispatchY[i] == 1) {
+			dispatchSizeY++;
+			sortedDispatchY.push_back(i);
+		}
+		if(dispatchZ[i] == 1) {
+			dispatchSizeZ++;
+			sortedDispatchZ.push_back(i);
+		}
+
+	}
+	for (int i = 0; i < dispatchSizeX; i++) {
+		for (int j = 0; j < dispatchSizeY; j++) {
+			for (int k = 0; k < dispatchSizeZ; k++) {
+				if (dispatchX[sortedDispatchX[i]] == 1 && dispatchY[sortedDispatchY[j]] == 1 && dispatchZ[sortedDispatchZ[k]] == 1) {
+					dispatchInfo info = { sortedDispatchX[i], sortedDispatchY[j], sortedDispatchZ[k] };
+					dispatchInfoList.push_back(info);
+				}
+			}
+		}
+	}
+
+}
+
+void Application::commitPagesForLevel(int mipLevel, int dimension, int* levelArray) {
+	int pagesPerDimension = dimension / pageSize;
+	int totalPages = pagesPerDimension * pagesPerDimension * pagesPerDimension;
+	for (int i = 0; i < totalPages; i++) {
+		if (levelArray[i] == 0) {
+			continue;
+		}
+		int z = i / (pagesPerDimension * pagesPerDimension);
+		int y = (i / pagesPerDimension) % pagesPerDimension;
+		int x = i % pagesPerDimension;
+		glTexPageCommitmentARB(GL_TEXTURE_3D, mipLevel, x * pageSize, y * pageSize, z * pageSize, pageSize, pageSize, pageSize, GL_TRUE);
+
+		if(mipLevel == 0){
+			dispatchX[x] = 1;
+			dispatchY[y] = 1;
+			dispatchZ[z] = 1;
+		}
+
+	}
+}
+
+void Application::VoxelMipMapper(Texture3D Texture, const GLchar* textureName) {
+
+	//glEnable(GL_ARB_sparse_texture);
+	glEnable(GL_ARB_shader_image_load_store);
+
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	//double startTime = glfwGetTime();
+	glUseProgram(storeImageDataCompute->ID);
+	//std::cout << glfwGetTime() - startTime << " Time taken swapt to compute shader \n";
+
+	glUniform1i(glGetUniformLocation(storeImageDataCompute->ID, "VoxelDimensions"), voxelTexture_.size);
+	glUniform1i(glGetUniformLocation(storeImageDataCompute->ID, "MipLevels"), mipLevels);
+
+	for (int level = 0; level < mipLevels; level++) {
+		std::string uniformName = std::string("mipTextures") + std::to_string(level);
+		int uniformLoc = glGetUniformLocation(storeImageDataCompute->ID, uniformName.c_str());
+		glBindImageTexture(
+			level,            // Use the level as the binding unit for simplicity
+			Texture.textureID,
+			level,            // The mipmap level to bind
+			GL_TRUE,          // Layered targeting the whole 3D texture
+			0,                // No layer
+			GL_WRITE_ONLY,    // Write only access
+			GL_RGBA8
+		);// Texture format
+		glUniform1i(uniformLoc, level);
+	}
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(PageUsageInfo), nullptr, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, ssbo); // Binding to binding point 0
+
+	for (int level = 1; level <= mipLevels; level++) {
+		int levelSize = int(voxelTextureSize) >> level;
+		glUniform1i(glGetUniformLocation(storeImageDataCompute->ID, "currentLevel"), level - 1);
+		glDispatchCompute(levelSize, levelSize, levelSize);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	}
+	//glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 }

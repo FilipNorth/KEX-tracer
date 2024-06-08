@@ -14,6 +14,6 @@ void main() {
 	pos.z = (gl_VertexID / Dimensions) % Dimensions;
 	pos.y = gl_VertexID / (Dimensions*Dimensions);
 
-	color = texture(VoxelsTexture, pos/Dimensions);
+	color = textureLod(VoxelsTexture, pos / float(Dimensions), 0);
 	gl_Position = vec4(pos - Dimensions*0.5, 1);
 }
