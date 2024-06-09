@@ -434,6 +434,7 @@ void Application::InitializeLighting(Shader * shader) {
 }
 
 void Application::CreateVoxels() {
+	glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
 
@@ -473,6 +474,7 @@ void Application::CreateVoxels() {
 
 	// Reset viewport
 	glViewport(0, 0, windowWidth_, windowHeight_);
+	glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
 }
 
 void Application::UpdateVoxels() {

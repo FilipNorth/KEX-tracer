@@ -88,7 +88,8 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, vec3 startPos, out float occl
         float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
         float lodLevel = min(log2(diameter / voxelWorldSize), maxLOD); // where maxLOD is the maximum mipmap level
         vec4 voxelColor = sampleVoxels(startPos + dist * direction, lodLevel);
-        if(steps == 0 && voxelColor.a > 0.8){
+        if(steps <= 1 && voxelColor.a > 0.5){
+            occlusion = 1;
             return vec4(0, 0, 0, 0);
             occlusion = voxelColor.a;
         }
@@ -98,7 +99,7 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, vec3 startPos, out float occl
         color += a * voxelColor.rgb * voxelColor.a;
         alpha += a * voxelColor.a;
         //occlusion += a * voxelColor.a;
-        occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
+        occlusion += (a * voxelColor.a) / (1.0 + 0.05 * diameter);
         dist += diameter * 0.5; // smoother
 
         //dist += diameter; // faster but misses more voxels
@@ -124,7 +125,7 @@ vec4 indirectLight(vec3 position,  vec3 normal,  out float occlusion_out) {
         occlusion_out += coneWeights[i] * occlusion;
     }
 
-    occlusion_out = 1.0 - occlusion_out;
+    occlusion_out = max(0, 1.0 - occlusion_out);
 
     return color;
 }
@@ -171,7 +172,7 @@ void main() {
 	float occlusion = 0.0;
     vec3 indirectDiffuseLight = indirectLight(voxelPosition, normal, occlusion).rgb;
 
-    indirectDiffuseLight =  10.0 * indirectDiffuseLight * roughness;
+    indirectDiffuseLight =  10.0 * indirectDiffuseLight;
     occlusion = min(1,   occlusion); // Make occlusion brighter
 
 	// Overwrite currently stored value.
