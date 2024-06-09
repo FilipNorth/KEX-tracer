@@ -359,7 +359,7 @@ bool Application::SetupShadowMap() {
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFramebuffer_);
 
 	// Depth texture
-	depthTexture_.width = depthTexture_.height = 2048;
+	depthTexture_.width = depthTexture_.height = 2048*4;
 
 	viewMatrix = glm::lookAt(lightDirection_, glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	projectionMatrix = glm::ortho	<float>(-120, 120, -120, 120, -500, 500);

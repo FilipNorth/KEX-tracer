@@ -50,7 +50,7 @@ uniform float SaveLightToVoxel;
 uniform vec3 LightDirection;
 
 const float MAX_DIST = 500.0;
-const float ALPHA_THRESH = 0.95;
+const float ALPHA_THRESH = 0.95; 
 
 const int DIFFUSE_CONE_COUNT = 16;
 const float DIFFUSE_CONE_APERTURE = 0.872665;
@@ -87,7 +87,7 @@ vec3 coneDirections[6] = vec3[]
                             vec3(-0.509037, 0.5, -0.700629),
                             vec3(-0.823639, 0.5, 0.267617)
                             );
-float coneWeights[6] = float[](0.25, 0.15, 0.15, 0.15, 0.15, 0.15);
+float coneWeights[6] = float[](0.16, 0.16, 0.16, 0.16, 0.16, 0.16);
 
 // // 5 90 degree cones
 // const int NUM_CONES = 5;
@@ -149,10 +149,11 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, int specular, out float occlu
         //dist += diameter; // faster but misses more voxels
         steps++;
     }
-
+    /*
     if(dist >= MAX_DIST && specular == 1 && alpha < 0.2) {
         return vec4(color, alpha) * 2; 
     }
+    */
 
     return vec4(color, alpha);
 }
@@ -230,7 +231,7 @@ void main() {
     indirectDiffuseLight = ShowIndirectDiffuse > 0.5 ? 1.0 * indirectDiffuseLight * roughness : vec3(0.0);
 
         // Sum direct and indirect diffuse light and tweak a little bit
-        occlusion = min(1,  occlusion); // Make occlusion brighter
+        occlusion = min(1,  occlusion)/1; // Make occlusion brighter //new
         //ambientOcclusion = ShowAmbientOcculision > 0.5 ? 0.3 * diffuseColor.rgb * occlusion : vec3(0.0); //rougnhess??
 
     vec3 diffuseReflection;
@@ -239,11 +240,11 @@ void main() {
         
 
         //diffuseReflection = 2.0 * occlusion * (directDiffuseLight + indirectDiffuseLight * 0.7) * materialColor.rgb;
-        diffuseReflection = ( (5*  occlusion * indirectDiffuseLight)  +  (0.3*directDiffuseLight) ) * diffuseColor.rgb + (0.01 * materialColor.rgb);
+        diffuseReflection = ( (3*  occlusion * indirectDiffuseLight)  +  (0.3*directDiffuseLight) ) * diffuseColor.rgb + (0 * materialColor.rgb);
     }
         
 
-    // Calculate specular light
+    // Calculate specular lightS
     vec3 specularReflection;
     {
         ///vec4 specularColor = texture(SpecularTexture, UV);
@@ -265,7 +266,7 @@ void main() {
         vec4 tracedSpecular = coneTrace(reflectDir, angle, 1,  specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
         specularOcclusion = 1.0 - specularOcclusion;
         //specularReflection = ShowIndirectSpecular > 0.5 ? 0.2 *  tracedSpecular.rgb : vec3(0.0);
-        specularReflection = ShowIndirectSpecular > 0.5 ? ((0.4 *specularOcclusion*tracedSpecular.rgb) + (0.5*metallic * directSpecularLight )): vec3(0.0);
+        specularReflection = ShowIndirectSpecular > 0.5 ? ((1 *specularOcclusion*tracedSpecular.rgb*1 ) + (0.05 *specularOcclusion*tracedSpecular.rgb * metallic) + (0.5*metallic * directSpecularLight )): vec3(0.0);//new 1/roughness
     }
 
     color = vec4(diffuseReflection +  specularReflection, alpha);

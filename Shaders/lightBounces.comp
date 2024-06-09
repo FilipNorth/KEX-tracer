@@ -182,7 +182,7 @@ void main() {
     vec3 indirectDiffuseLight = indirectLight(voxelPosition, normal, occlusion).rgb;
 
     indirectDiffuseLight =  indirectDiffuseLight;
-    occlusion = min(1,   occlusion); // Make occlusion brighter
+    occlusion = min(1,   occlusion)/1; // Make occlusion brighter //new
 
 	// Overwrite currently stored value.
 	// TODO: Atomic operations to get an averaged value, described in OpenGL insights about voxelization
@@ -191,7 +191,7 @@ void main() {
     if(occlusion < 0.1){
         return;
     }
-    imageStore(bounceTexture, writePos, vec4(indirectDiffuseLight * occlusion + voxel.rgb * 1, voxel.a));
+    imageStore(bounceTexture, writePos, vec4((5*indirectDiffuseLight * occlusion) + voxel.rgb * 1, voxel.a)); //new
     //imageAtomicCompSwap(bounceTexture, writePos, vec4(indirectDiffuseLight * occlusion + voxel.rgb, voxel.a));
 
     //imageStore(bounceTexture, writePos, vec4(0, 1, 0, 1));
