@@ -113,8 +113,8 @@ vec4 coneTrace(vec3 direction, float tanHalfAngle, vec3 startPos, out float occl
 vec4 indirectLight(vec3 position,  vec3 normal,  out float occlusion_out) {
     vec4 color = vec4(0);
     occlusion_out = 0.0;
-    position = position + normal;
-    //vec3 startPos = position + normal * VoxelDimensions; // slight offset in the direction of the normal
+    position = position + normal * 0;
+    //vec3 startPos = position + 0 * normal * VoxelDimensions; // slight offset in the direction of the normal
 
     for(int i = 0; i < NUM_CONES; i++) {
         float occlusion = 0.0;
